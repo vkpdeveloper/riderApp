@@ -12,6 +12,7 @@ import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/orderprovider.dart';
 import 'package:rideapp/providers/user_provider.dart';
 import 'package:rideapp/services/firebase_auth_service.dart';
+import 'package:rideapp/views/saveaddress_screen.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -57,6 +58,48 @@ class _HomeScreenState extends State<HomeScreen> {
     }).catchError((e) {
       print(e);
     });
+  }
+
+  showStationPickerDialog(BuildContext context) {
+    return showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) {
+          OrderProvider orderProvider = Provider.of<OrderProvider>(context);
+          return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0)),
+              actions: <Widget>[
+                FlatButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text("Done"),
+                    textColor: ThemeColors.primaryColor)
+              ],
+              title: Text("Select Ride Type"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  RadioListTile(
+                    groupValue: orderProvider.getRideType,
+                    value: 0,
+                    activeColor: ThemeColors.primaryColor,
+                    title: Text("Local"),
+                    onChanged: (val) {
+                      orderProvider.setGroupRideType(val);
+                    },
+                  ),
+                  RadioListTile(
+                    groupValue: orderProvider.getRideType,
+                    value: 1,
+                    activeColor: ThemeColors.primaryColor,
+                    title: Text("Outside Station"),
+                    onChanged: (val) {
+                      orderProvider.setGroupRideType(val);
+                    },
+                  )
+                ],
+              ));
+        });
   }
 
   @override
@@ -222,6 +265,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+        margin: EdgeInsets.all(20.0),
+        borderRadius: BorderRadius.circular(15.0),
         minHeight: (MediaQuery.of(context).size.height / 6),
         maxHeight: (MediaQuery.of(context).size.height / 3 - 20),
         panel: isPanelOpenComplete
@@ -321,7 +366,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Flexible(
                                             child: Text(
                                               locationViewProvider
-                                                          .getDestinationPointAddress ==
+                                                          .getDestinationPointAddress
+                                                          .toString() ==
                                                       ""
                                                   ? "Not yet selected"
                                                   : locationViewProvider
@@ -342,7 +388,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                         right: 0.0,
                                         child: IconButton(
                                           iconSize: 25.0,
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        SavedAddress(
+                                                          isFromHome: true,
+                                                        )));
+                                            locationViewProvider
+                                                .setLocationView(LocationView
+                                                    .DESTINATIONSELECTED);
+                                          },
                                           icon: Icon(Icons.more_vert),
                                           color: ThemeColors.primaryColor,
                                         ))
@@ -406,17 +463,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           locationViewProvider
                               .setDestinationLatLng(newPosition);
                       },
-                      myLocationButtonEnabled: false,
+                      myLocationButtonEnabled: true,
                       myLocationEnabled: true,
                       buildingsEnabled: true,
                       scrollGesturesEnabled: true,
-                      mapType: MapType.terrain,
-                      initialCameraPosition:
-                          CameraPosition(target: initLatLng, zoom: 14.0),
+                      mapType: MapType.hybrid,
+                      trafficEnabled: true,
+                      zoomControlsEnabled: false,
+                      zoomGesturesEnabled: true,
+                      initialCameraPosition: CameraPosition(
+                          target: initLatLng,
+                          zoom: orderProvider.getRideType == 0 ? 14 : 8),
                       onMapCreated: (GoogleMapController controller) {
                         showCurrentLocationOnSheet(locationViewProvider);
                         locationViewProvider.setPickUpLatLng(initLatLng);
                         _mapsController = controller;
+                        showStationPickerDialog(context);
                       },
                     ))
                 : Center(

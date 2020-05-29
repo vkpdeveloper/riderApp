@@ -8,14 +8,10 @@ class OrderProvider with ChangeNotifier {
   String _receiverPhone;
   String _truckName;
   int _orderPrice;
+  int _groupOfRideType = 0;
   double _totalDistance;
   StaticUtils _utils = StaticUtils();
-  List<String> _trucksCategory = [
-    "Mini",
-    "Small",
-    "Medium",
-    "Big"
-  ];
+  List<String> _trucksCategory = ["Mini", "Small", "Medium", "Big"];
   String _selectedTruck = "Mini";
 
   OrderProvider() {
@@ -28,6 +24,8 @@ class OrderProvider with ChangeNotifier {
   }
 
   int get getSelectedPaymentMethod => _selectedPaymentMethod;
+
+  int get getRideType => _groupOfRideType;
 
   String get getReceiverName => _receiverName;
 
@@ -45,6 +43,11 @@ class OrderProvider with ChangeNotifier {
 
   void setPaymentMethod(int id) {
     _selectedPaymentMethod = id;
+    notifyListeners();
+  }
+
+  void setGroupRideType(int type) {
+    _groupOfRideType = type;
     notifyListeners();
   }
 

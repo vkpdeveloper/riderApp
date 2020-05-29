@@ -10,6 +10,7 @@ import 'package:progress_dialog/progress_dialog.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/orderprovider.dart';
 import 'package:rideapp/providers/user_provider.dart';
+import 'package:rideapp/views/ordersuccess_screen.dart';
 
 class FirebaseUtils {
   FirebaseAuth _auth = FirebaseAuth.instance;
@@ -111,21 +112,21 @@ class FirebaseUtils {
     DocumentSnapshot selectedVendor;
     QuerySnapshot allVendors = await _firestoreVendor.getDocuments();
     for (DocumentSnapshot vendor in allVendors.documents) {
-      if (isVendorDetected) {
-        dialog.update(message: "Almost done...");
-        addBooking(selectedVendor, locationViewProvider, orderProvider, dialog,
-            userPreferences);
-        break;
-      } else {
-        if (vendor.data['isFree']) {
+      if (vendor.data['isFree']) {
+          print(vendor.data['userID']);
           selectedVendor = vendor;
           isVendorDetected = true;
+          break;
         }
-      }
+    }
+    if (isVendorDetected) {
+      dialog.update(message: "Almost done...");
+      addBooking(selectedVendor, locationViewProvider, orderProvider, dialog,
+          userPreferences, context);
     }
     if (!isVendorDetected) {
-      addBookingWithoutVendor(
-          locationViewProvider, orderProvider, dialog, userPreferences);
+      addBookingWithoutVendor(locationViewProvider, orderProvider, dialog,
+          userPreferences, context);
     }
   }
 
@@ -133,9 +134,11 @@ class FirebaseUtils {
       LocationViewProvider locationViewProvider,
       OrderProvider orderProvider,
       ProgressDialog dialog,
-      UserPreferences userPreferences) {
+      UserPreferences userPreferences,
+      BuildContext context) {
     String orderID =
         "ORDER${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
+    print(orderID);
     Map<String, dynamic> orderData = {
       "orderID": orderID,
       "userID": userPreferences.getUserID,
@@ -169,6 +172,12 @@ class FirebaseUtils {
     _firestoreOrder.document(orderID).setData(orderData).then((value) {
       dialog.hide();
       Fluttertoast.showToast(msg: "Order Placed");
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => OrderSuccessful(
+                    orderID: orderID,
+                  )));
     });
   }
 
@@ -177,9 +186,11 @@ class FirebaseUtils {
       LocationViewProvider locationViewProvider,
       OrderProvider orderProvider,
       ProgressDialog dialog,
-      UserPreferences userPreferences) {
+      UserPreferences userPreferences,
+      BuildContext context) {
     String orderID =
         "ORDER${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
+    print(orderID);
     Map<String, dynamic> orderData = {
       "orderID": orderID,
       "userID": userPreferences.getUserID,
@@ -192,7 +203,7 @@ class FirebaseUtils {
           ? "Paytm"
           : "CC or DC Card",
       "riderUserID": snapshot.data['userID'],
-      "riderPhone": snapshot.data['phone'],
+      "riderPhone": snapshot.documentID,
       "pickUpLatLng": {
         "latitude": locationViewProvider.getPickUpLatLng.latitude,
         "longitude": locationViewProvider.getPickUpLatLng.longitude
@@ -218,6 +229,12 @@ class FirebaseUtils {
         .updateData({"isFree": false}).then((value) {
       Fluttertoast.showToast(msg: "Order Placed");
       dialog.hide();
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => OrderSuccessful(
+                    orderID: orderID,
+                  )));
     });
   }
 }
