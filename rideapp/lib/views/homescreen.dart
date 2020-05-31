@@ -1,19 +1,30 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:android_intent/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_map_location_picker/google_map_location_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
 import 'package:rideapp/controllers/static_utils.dart';
 import 'package:rideapp/enums/locationview.dart';
+import 'package:rideapp/model/auto_complete_item.dart';
+import 'package:rideapp/model/nearby_places.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/orderprovider.dart';
 import 'package:rideapp/providers/user_provider.dart';
 import 'package:rideapp/services/firebase_auth_service.dart';
+import 'package:rideapp/utils/uuid.dart';
 import 'package:rideapp/views/saveaddress_screen.dart';
+import 'package:rideapp/widgets/rich_suggestion.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -29,28 +40,283 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<Marker> _markers = {};
   BitmapDescriptor pinLocationIcon;
   bool isPanelOpenComplete = false;
+  String sessionToken;
+
+  OverlayEntry overlayEntry;
+  List<NearbyPlace> nearbyPlaces = List();
+  var appBarKey = GlobalKey();
+  LocationResult locationResult;
+  bool hasSearchTerm = false;
+  LatLng _lastMapPos;
+  final _searchQuery = new TextEditingController();
+  Timer _debounce;
+  FocusNode _searchQueryNode;
+  bool isFirstTimeOpen = true;
+
+  _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      searchPlace(_searchQuery.text);
+    });
+  }
+
+  void clearOverlay() {
+    if (overlayEntry != null) {
+      overlayEntry.remove();
+      overlayEntry = null;
+    }
+  }
+
+  void searchPlace(String place) {
+    if (_scaffoldKey.currentContext == null) return;
+
+    clearOverlay();
+
+    setState(() => hasSearchTerm = place.length > 0);
+
+    if (place.length < 1) return;
+
+    final RenderBox renderBox = _scaffoldKey.currentContext.findRenderObject();
+    Size size = renderBox.size;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 160,
+        width: MediaQuery.of(context).size.width,
+        child: Material(
+          elevation: 1,
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            child: Row(
+              children: <Widget>[
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+                SizedBox(width: 24),
+                Expanded(
+                  child: Text(
+                    'Finding place...',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(overlayEntry);
+
+    autoCompleteSearch(place);
+  }
+
+  void autoCompleteSearch(String place) {
+    place = place.replaceAll(" ", "+");
+    var endpoint =
+        "https://maps.googleapis.com/maps/api/place/autocomplete/json?" +
+            "key=${APIKeys.googleMapsAPI}&" +
+            "input={$place}&sessiontoken=$sessionToken";
+
+    if (locationResult != null) {
+      endpoint += "&location=${locationResult.latLng.latitude}," +
+          "${locationResult.latLng.longitude}";
+    }
+    LocationUtils.getAppHeaders()
+        .then((headers) => http.get(endpoint, headers: headers))
+        .then((response) {
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
+        print(data);
+        List<dynamic> predictions = data['predictions'];
+
+        List<RichSuggestion> suggestions = [];
+
+        if (predictions.isEmpty) {
+          AutoCompleteItem aci = AutoCompleteItem();
+          aci.text = 'No result found';
+          aci.offset = 0;
+          aci.length = 0;
+
+          suggestions.add(RichSuggestion(aci, () {}));
+        } else {
+          for (dynamic t in predictions) {
+            AutoCompleteItem aci = AutoCompleteItem();
+
+            aci.id = t['place_id'];
+            aci.text = t['description'];
+            aci.offset = t['matched_substrings'][0]['offset'];
+            aci.length = t['matched_substrings'][0]['length'];
+
+            suggestions.add(RichSuggestion(aci, () {
+              decodeAndSelectPlace(aci.id);
+            }));
+          }
+        }
+
+        displayAutoCompleteSuggestions(suggestions);
+      }
+    }).catchError((error) {
+      print("Error : ${error}");
+    });
+  }
+
+  void decodeAndSelectPlace(String placeId) {
+    clearOverlay();
+
+    String endpoint =
+        "https://maps.googleapis.com/maps/api/place/details/json?key=${APIKeys.googleMapsAPI}" +
+            "&placeid=$placeId";
+
+    LocationUtils.getAppHeaders()
+        .then((headers) => http.get(endpoint, headers: headers))
+        .then((response) {
+      if (response.statusCode == 200) {
+        Map<String, dynamic> location =
+            jsonDecode(response.body)['result']['geometry']['location'];
+
+        LatLng latLng = LatLng(location['lat'], location['lng']);
+
+        moveToLocation(latLng);
+      }
+    }).catchError((error) {
+      print(error);
+    });
+  }
+
+  void moveToLocation(LatLng latLng) {
+    _searchQueryNode.unfocus();
+    _mapsController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: latLng,
+          zoom: 16,
+        ),
+      ),
+    );
+
+    clearOverlay();
+
+    reverseGeocodeLatLng(latLng);
+
+    getNearbyPlaces(latLng);
+  }
+
+  void getNearbyPlaces(LatLng latLng) {
+    LocationUtils.getAppHeaders()
+        .then((headers) => http.get(
+            "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" +
+                "key=${APIKeys.googleMapsAPI}&" +
+                "location=${latLng.latitude},${latLng.longitude}&radius=150",
+            headers: headers))
+        .then((response) {
+      if (response.statusCode == 200) {
+        nearbyPlaces.clear();
+        for (Map<String, dynamic> item
+            in jsonDecode(response.body)['results']) {
+          NearbyPlace nearbyPlace = NearbyPlace();
+
+          nearbyPlace.name = item['name'];
+          nearbyPlace.icon = item['icon'];
+          double latitude = item['geometry']['location']['lat'];
+          double longitude = item['geometry']['location']['lng'];
+
+          LatLng _latLng = LatLng(latitude, longitude);
+
+          nearbyPlace.latLng = _latLng;
+
+          nearbyPlaces.add(nearbyPlace);
+        }
+      }
+      setState(() {
+        hasSearchTerm = false;
+      });
+    }).catchError((error) {});
+  }
+
+  Future reverseGeocodeLatLng(LatLng latLng) async {
+    var response = await http.get(
+        "https://maps.googleapis.com/maps/api/geocode/json?latlng=${latLng.latitude},${latLng.longitude}"
+        "&key=${APIKeys.googleMapsAPI}",
+        headers: await LocationUtils.getAppHeaders());
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> responseJson = jsonDecode(response.body);
+
+      String road;
+
+      if (responseJson['status'] == 'REQUEST_DENIED') {
+        road = 'REQUEST DENIED = please see log for more details';
+        print(responseJson['error_message']);
+      } else {
+        road =
+            responseJson['results'][0]['address_components'][0]['short_name'];
+      }
+
+      setState(() {
+        locationResult = LocationResult();
+        locationResult.address = road;
+        locationResult.latLng = latLng;
+      });
+    }
+  }
+
+  void displayAutoCompleteSuggestions(List<RichSuggestion> suggestions) {
+    final RenderBox renderBox = _scaffoldKey.currentContext.findRenderObject();
+    Size size = renderBox.size;
+
+    clearOverlay();
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        width: MediaQuery.of(context).size.width,
+        top: 160,
+        child: Material(
+          elevation: 1,
+          child: Column(
+            children: suggestions,
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(overlayEntry);
+  }
 
   @override
   void initState() {
     super.initState();
     getCurrentLocation();
+    _searchQuery.addListener(_onSearchChanged);
+    sessionToken = Uuid().generateV4();
+    _searchQueryNode = FocusNode();
     _utils.getBytesFromAsset('asset/images/marker.png', 64).then((value) {
       pinLocationIcon = BitmapDescriptor.fromBytes(value);
     });
   }
 
+  void dispose() {
+    super.dispose();
+    _searchQueryNode.dispose();
+    _searchQuery.removeListener(_onSearchChanged);
+    _searchQuery.dispose();
+  }
+
   showCurrentLocationOnSheet(LocationViewProvider provider) async {
     final Coordinates coordinates =
         Coordinates(initLatLng.latitude, initLatLng.longitude);
-    String address = await _utils.getAddressOnCords(coordinates);
-    provider.setAddress(address);
+    List<Address> address =
+        await Geocoder.local.findAddressesFromCoordinates(coordinates);
+    provider.setAddress(address[0].addressLine);
   }
 
   getCurrentLocation() async {
     final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
 
     geolocator
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+        .getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
         .then((Position position) async {
       setState(() {
         initLatLng = LatLng(position.latitude, position.longitude);
@@ -247,7 +513,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         SizedBox(width: 10.0),
                         Flexible(
                           child: Text(
-                            locationViewProvider.getPickUpPointAddress == ""
+                            locationViewProvider.getPickUpPointAddress == "" ||
+                                    locationViewProvider
+                                            .getPickUpPointAddress ==
+                                        null
                                 ? "Fetching..."
                                 : locationViewProvider.getPickUpPointAddress,
                             overflow: TextOverflow.ellipsis,
@@ -310,8 +579,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Flexible(
                                         child: Text(
                                           locationViewProvider
-                                                      .getPickUpPointAddress ==
-                                                  ""
+                                                          .getPickUpPointAddress ==
+                                                      "" ||
+                                                  locationViewProvider
+                                                          .getPickUpPointAddress ==
+                                                      null
                                               ? "Fetching..."
                                               : locationViewProvider
                                                   .getPickUpPointAddress,
@@ -366,9 +638,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Flexible(
                                             child: Text(
                                               locationViewProvider
-                                                          .getDestinationPointAddress
-                                                          .toString() ==
-                                                      ""
+                                                              .getDestinationPointAddress
+                                                              .toString() ==
+                                                          null ||
+                                                      locationViewProvider
+                                                              .getDestinationPointAddress ==
+                                                          ""
                                                   ? "Not yet selected"
                                                   : locationViewProvider
                                                       .getDestinationPointAddress,
@@ -430,74 +705,185 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
             : Container(),
-        body: Stack(
-          overflow: Overflow.visible,
-          children: <Widget>[
-            initLatLng != null
-                ? Container(
-                    height: MediaQuery.of(context).size.height,
-                    width: MediaQuery.of(context).size.width,
-                    child: GoogleMap(
-                      markers: _markers,
-                      onTap: (LatLng newPosition) async {
-                        if (_markers.isNotEmpty) {
-                          _markers.clear();
-                        }
-                        _markers.add(Marker(
-                            markerId: MarkerId("1"),
-                            position: newPosition,
-                            icon: pinLocationIcon));
-                        setState(() {
-                          initLatLng = newPosition;
-                        });
-                        final Coordinates coordinates = Coordinates(
-                            newPosition.latitude, newPosition.longitude);
-                        locationViewProvider.setAddress("Fetching...");
-                        String myAddress =
-                            await _utils.getAddressOnCords(coordinates);
-                        locationViewProvider.setAddress(myAddress);
-                        if (locationViewProvider.getLocationView ==
-                            LocationView.PICKUPSELECTED)
-                          locationViewProvider.setPickUpLatLng(newPosition);
-                        else
-                          locationViewProvider
-                              .setDestinationLatLng(newPosition);
-                      },
-                      myLocationButtonEnabled: true,
-                      myLocationEnabled: true,
-                      buildingsEnabled: true,
-                      scrollGesturesEnabled: true,
-                      mapType: MapType.hybrid,
-                      trafficEnabled: true,
-                      zoomControlsEnabled: false,
-                      zoomGesturesEnabled: true,
-                      initialCameraPosition: CameraPosition(
-                          target: initLatLng,
-                          zoom: orderProvider.getRideType == 0 ? 14 : 8),
-                      onMapCreated: (GoogleMapController controller) {
-                        showCurrentLocationOnSheet(locationViewProvider);
-                        locationViewProvider.setPickUpLatLng(initLatLng);
-                        _mapsController = controller;
-                        showStationPickerDialog(context);
-                      },
-                    ))
-                : Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          ThemeColors.primaryColor),
+        body: GestureDetector(
+          onTap: () {
+            Focus.of(context).unfocus();
+            clearOverlay();
+          },
+          child: Stack(
+            overflow: Overflow.visible,
+            children: <Widget>[
+              initLatLng != null
+                  ? Container(
+                      height: MediaQuery.of(context).size.height,
+                      width: MediaQuery.of(context).size.width,
+                      child: GoogleMap(
+                        // markers: _markers,
+                        // onTap: (LatLng newPosition) async {
+                        //   if (_markers.isNotEmpty) {
+                        //     _markers.clear();
+                        //   }
+                        //   _markers.add(Marker(
+                        //       markerId: MarkerId("1"),
+                        //       position: newPosition,
+                        //       icon: pinLocationIcon));
+                        //   setState(() {
+                        //     initLatLng = newPosition;
+                        //   });
+                        //   final Coordinates coordinates = Coordinates(
+                        //       newPosition.latitude, newPosition.longitude);
+                        //   locationViewProvider.setAddress("Fetching...");
+                        //   String myAddress =
+                        //       await _utils.getAddressOnCords(coordinates);
+                        //   locationViewProvider.setAddress(myAddress);
+                        //   if (locationViewProvider.getLocationView ==
+                        //       LocationView.PICKUPSELECTED)
+                        //     locationViewProvider.setPickUpLatLng(newPosition);
+                        //   else
+                        //     locationViewProvider
+                        //         .setDestinationLatLng(newPosition);
+                        // },
+                        onCameraMove: (CameraPosition position) {
+                          _lastMapPos = position.target;
+                        },
+                        onCameraIdle: () async {
+                          if (isFirstTimeOpen) {
+                            showCurrentLocationOnSheet(locationViewProvider);
+                            isFirstTimeOpen = false;
+                          } else {
+                            try {
+                              print(_lastMapPos);
+                              locationViewProvider.setMapLastPos(_lastMapPos);
+                              locationViewProvider.setAddress("");
+                              Coordinates coordinates = new Coordinates(
+                                  _lastMapPos.latitude, _lastMapPos.longitude);
+                              List<Address> addresses = await Geocoder.local
+                                  .findAddressesFromCoordinates(coordinates);
+                              String address = addresses[0].addressLine;
+                              if (locationViewProvider.getLocationView ==
+                                  LocationView.PICKUPSELECTED) {
+                                locationViewProvider
+                                    .setPickUpLatLng(locationResult.latLng);
+
+                                locationViewProvider.setPickUpAddress(address);
+                              } else {
+                                locationViewProvider.setDestinationLatLng(
+                                    locationResult.latLng);
+                                locationViewProvider
+                                    .setDestinationPointAddress(address);
+                              }
+                            } catch (e) {
+                              print(e.toString());
+                            }
+                          }
+                        },
+                        myLocationEnabled: true,
+                        buildingsEnabled: true,
+                        scrollGesturesEnabled: true,
+                        mapType: MapType.hybrid,
+                        trafficEnabled: true,
+                        zoomControlsEnabled: false,
+                        zoomGesturesEnabled: true,
+                        initialCameraPosition: CameraPosition(
+                            target: initLatLng,
+                            zoom: orderProvider.getRideType == 0 ? 14 : 8),
+                        onMapCreated: (GoogleMapController controller) {
+                          _mapsController = controller;
+                          showCurrentLocationOnSheet(locationViewProvider);
+                          locationViewProvider.setPickUpLatLng(initLatLng);
+                          showStationPickerDialog(context);
+                        },
+                      ))
+                  : Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            ThemeColors.primaryColor),
+                      ),
                     ),
+              Positioned(
+                top: 30.0,
+                left: 20.0,
+                child: FloatingActionButton(
+                  heroTag: 'menu',
+                  materialTapTargetSize: MaterialTapTargetSize.padded,
+                  onPressed: () => _scaffoldKey.currentState.openDrawer(),
+                  backgroundColor: ThemeColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  child: Icon(Icons.menu),
+                ),
+              ),
+              Positioned(
+                top: 30.0,
+                right: 20.0,
+                child: FloatingActionButton(
+                  heroTag: 'current',
+                  onPressed: () {
+                    _mapsController.animateCamera(
+                        CameraUpdate.newCameraPosition(
+                            CameraPosition(target: initLatLng, zoom: 14.0)));
+                  },
+                  backgroundColor: ThemeColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  materialTapTargetSize: MaterialTapTargetSize.padded,
+                  child: Icon(Icons.my_location),
+                ),
+              ),
+              _buildSearchBar(context),
+              pin()
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    return Positioned(
+        top: 100,
+        left: 40,
+        right: 40,
+        child: Container(
+          width: MediaQuery.of(context).size.width - 80,
+          height: 150,
+          child: TextField(
+            focusNode: _searchQueryNode,
+            controller: _searchQuery,
+            decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                hintText: "Search Location"),
+          ),
+        ));
+  }
+
+  Widget pin() {
+    return IgnorePointer(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(Icons.place, size: 56),
+            Container(
+              decoration: ShapeDecoration(
+                shadows: [
+                  BoxShadow(
+                    blurRadius: 4,
+                    color: Colors.black38,
                   ),
-            Positioned(
-              top: 30.0,
-              left: 20.0,
-              child: FloatingActionButton(
-                heroTag: 'menu',
-                onPressed: () => _scaffoldKey.currentState.openDrawer(),
-                backgroundColor: ThemeColors.primaryColor,
-                foregroundColor: Colors.white,
-                child: Icon(Icons.menu),
+                ],
+                shape: CircleBorder(
+                  side: BorderSide(
+                    width: 4,
+                    color: Colors.transparent,
+                  ),
+                ),
               ),
             ),
+            SizedBox(height: 56),
           ],
         ),
       ),

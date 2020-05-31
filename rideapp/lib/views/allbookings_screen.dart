@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:rideapp/constants/themecolors.dart';
 import 'package:rideapp/providers/user_provider.dart';
+import 'package:rideapp/views/trackorder_screen.dart';
 
 class AllBookings extends StatelessWidget {
   @override
@@ -111,7 +113,41 @@ class AllBookings extends StatelessWidget {
           MaterialButton(
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0)),
-            onPressed: () {},
+            onPressed: () {
+              print(document.data['riderPoint']);
+              LatLng pickUp = LatLng(document.data['riderPoint']['latitude'],
+                  document.data['riderPoint']['longitude']);
+              print(pickUp);
+              LatLng deskPoint = LatLng(document.data['destLatLng']['latitude'],
+                  document.data['destLatLng']['longitude']);
+              print(deskPoint);
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => TrackOrderScreen(
+                          orderID: document.data['orderID'],
+                          pickUp: pickUp,
+                          destPoint: deskPoint)));
+              // Map<String, LatLng> dataMap = {
+              //   "pickUpLatLng": LatLng(
+              //       document.data['pickUpLatLng']['latitude'],
+              //       document.data['pickUpLatLng']['latitude']),
+              //   "destLatLng": LatLng(document.data['destLatLng']['latitude'],
+              //       document.data['destLatLng']['latitude']),
+              // };
+              // LatLng pickUp = LatLng(document.data['pickUpLatLng']['latitude'],
+              //     document.data['pickUpLatLng']['latitude']);
+              // LatLng destPoint = LatLng(document.data['destLatLng']['latitude'],
+              //     document.data['destLatLng']['latitude']);
+              // Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //         builder: (context) => TrackOrderScreen(
+              //             orderID: document.data['orderID'],
+              //             dataMap: dataMap,
+              //             pickUp: pickUp,
+              //             destPoint: destPoint)));
+            },
             color: ThemeColors.primaryColor,
             child: Text(
               "TRACK ORDER",

@@ -11,6 +11,7 @@ class LocationViewProvider with ChangeNotifier {
   LatLng _pickUpLatLng;
   LatLng _destinationLatLng;
   bool _isDraggedUp = false;
+  LatLng _lastMapLocation;
 
   LocationViewProvider() {
     _locationView = LocationView.PICKUPSELECTED;
@@ -18,6 +19,7 @@ class LocationViewProvider with ChangeNotifier {
     _destinationPointAddress = "";
     _bottomSheetStatus = BottomSheetStatus.DOWN;
     _pickUpLatLng = LatLng(0.1234, 0123);
+    _lastMapLocation = LatLng(0.1234, 0123);
     _destinationLatLng = LatLng(0.1234, 0123);
   }
 
@@ -30,6 +32,8 @@ class LocationViewProvider with ChangeNotifier {
   String get getDestinationPointAddress => _destinationPointAddress;
 
   LatLng get getPickUpLatLng => _pickUpLatLng;
+
+  LatLng get getMapLastPos => _lastMapLocation;
 
   LatLng get getDestinationLatLng => _destinationLatLng;
 
@@ -75,6 +79,11 @@ class LocationViewProvider with ChangeNotifier {
 
   void setDestinationLatLng(LatLng latLng) {
     _destinationLatLng = latLng;
+    notifyListeners();
+  }
+
+  void setMapLastPos(LatLng latLng) {
+    _lastMapLocation = latLng;
     notifyListeners();
   }
 }
