@@ -13,7 +13,7 @@ class DriverDetails extends StatefulWidget {
 
 class _DriverDetailsState extends State<DriverDetails> {
   final _formKey = GlobalKey<FormState>();
-  String name, phoneNo, vehiclename, vehicleno, isdriver;
+  String name, phoneno, vehiclemodel, vehiclenumber, city, gstin;
   FirebaseUtils _utils = FirebaseUtils();
   List<String> allTrucks = [];
 
@@ -68,17 +68,18 @@ class _DriverDetailsState extends State<DriverDetails> {
 
   @override
   Widget build(BuildContext context) {
-    final reference = Firestore.instance.collection("driverSignup");
+    final _fireutils = FirebaseUtils();
     SignUpProvider signUpProvider = Provider.of<SignUpProvider>(context);
     return allTrucks == null
         ? Scaffold(
+          backgroundColor: Colors.yellow[300],
             body: Center(
             child: CircularProgressIndicator(),
           ))
         : WillPopScope(
             onWillPop: _onWillPop,
             child: Scaffold(
-              backgroundColor: Colors.blue[300],
+              backgroundColor: Colors.yellow[300],
               body: SafeArea(
                   child: Form(
                 autovalidate: true,
@@ -91,7 +92,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                         child: Padding(
                             padding: EdgeInsets.fromLTRB(0, 30, 30, 0),
                             child: Text(
-                              "Welcome dear partner \nplease provide following Details",
+                              "Dear partner \nplease provide following Details",
                               style: GoogleFonts.josefinSans(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20.0,
@@ -99,7 +100,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                             )),
                       ),
                       Padding(
-                          padding: EdgeInsets.all(20),
+                          padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
                           child: TextFormField(
                             keyboardType: TextInputType.text,
                             decoration: InputDecoration(
@@ -112,12 +113,15 @@ class _DriverDetailsState extends State<DriverDetails> {
                               }
                               return null;
                             },
-                            onSaved: (val) {
-                              signUpProvider.setName(val);
+                            onChanged: (value) {
+                              setState(() {
+                                name = value;
+                              });
+                              signUpProvider.setCity(value);
                             },
                           )),
                       Padding(
-                          padding: EdgeInsets.all(20),
+                          padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
                           child: TextFormField(
                             keyboardType: TextInputType.phone,
                             decoration: InputDecoration(
@@ -127,19 +131,46 @@ class _DriverDetailsState extends State<DriverDetails> {
                             validator: (value) {
                               if (value.length == 0) {
                                 return 'Please enter mobile number';
-                              } else if (RegExp(
-                                      r"^(\+91[\-\s]?)?[0]?(91)?[789]\d{10}$")
+                              } else if (!RegExp(
+                                      r"^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$")
                                   .hasMatch(value)) {
                                 return 'Invalid mobile number';
                               }
                               return null;
                             },
-                            onSaved: (val) {
-                              signUpProvider.setPhone(val);
+                             onChanged: (value) {
+                              setState(() {
+                                phoneno = value;
+                              });
+                              signUpProvider.setCity(value);
                             },
                           )),
                       Padding(
-                        padding: EdgeInsets.all(20),
+                          padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
+                          child: TextFormField(
+                            keyboardType: TextInputType.text,
+                            decoration: InputDecoration(
+                                labelText: "GSTIN",
+                                contentPadding: EdgeInsets.all(4.0),
+                                prefixIcon: Icon(Icons.confirmation_number)),
+                            validator: (value) {
+                              if (value.length == 0) {
+                                return 'Please enter GSTIN';
+                              } else if (!RegExp(
+                                      r"^([0][1-9]|[1-2][0-9]|[3][0-7])([A-Z]{5})([0-9]{4})([A-Z]{1}[1-9A-Z]{1})([Z]{1})([0-9A-Z]{1})+$")
+                                  .hasMatch(value)) {
+                                return 'Invalid GSTIN';
+                              }
+                              return null;
+                            },
+                           onChanged: (value) {
+                              setState(() {
+                                gstin = value;
+                              });
+                            },
+                          )),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
                         child: DropdownButtonFormField<String>(
                           hint: Text("Vehicle Model"),
                           icon: Icon(Icons.arrow_downward),
@@ -148,7 +179,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                           style: TextStyle(color: Colors.black),
                           onChanged: (String value) {
                             setState(() {
-                              vehiclename = value;
+                              vehiclemodel = value;
                             });
                             signUpProvider.setVehicleName(value);
                           },
@@ -162,7 +193,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                         ),
                       ),
                       Padding(
-                          padding: EdgeInsets.all(20),
+                          padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
                           child: TextFormField(
                             keyboardType: TextInputType.text,
                             decoration: InputDecoration(
@@ -171,19 +202,23 @@ class _DriverDetailsState extends State<DriverDetails> {
                                 prefixIcon: Icon(Icons.directions_bus)),
                             validator: (value) {
                               if (value.length == 0) {
-                                return 'Enter Vehicle No';
-                              } else if (value.length < 10) {
-                                return 'Invalid Vehicle No';
+                                return 'Please enter Vehicle no';
+                              } else if (!RegExp(
+                                      r"^([A-Z]{2}\s?(\d{2})?(-)?([A-Z]{1}|\d{1})?([A-Z]{1}|\d{1})?( )?(\d{4}))$")
+                                  .hasMatch(value)) {
+                                return 'Invalid vehicle no';
                               }
                               return null;
                             },
-                            // ,
-                            onSaved: (val) {
-                              signUpProvider.setVehicleNumber(val);
+                            onChanged: (value) {
+                              setState(() {
+                                vehiclenumber = value;
+                              });
                             },
+                            
                           )),
                       Padding(
-                          padding: EdgeInsets.all(20),
+                          padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
                           child: DropdownButtonFormField<String>(
                             icon: Icon(Icons.arrow_downward),
                             iconSize: 24,
@@ -197,7 +232,7 @@ class _DriverDetailsState extends State<DriverDetails> {
                             style: TextStyle(color: Colors.black),
                             onChanged: (value) {
                               setState(() {
-                                isdriver = value;
+                                city = value;
                               });
                               signUpProvider.setCity(value);
                             },
@@ -209,21 +244,40 @@ class _DriverDetailsState extends State<DriverDetails> {
                               );
                             }).toList(),
                           )),
-                      Container(
-                        child: MaterialButton(
+                      Column(
+                        children: <Widget>[
+                          Container(
+                            child: MaterialButton(
+                              color: Colors.yellow[800],
+                              child: Text("Proceed"),
+                              onPressed: () {
+                                if (_formKey.currentState.validate()) {
+                                  _formKey.currentState.save();
+                                  _fireutils.saveUserDetails(name, phoneno, gstin,
+                                      vehiclemodel, vehiclenumber, city);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => DriverDocuments(phoneno: phoneno,)),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          MaterialButton(
                           color: Colors.yellow[800],
-                          child: Text("Proceed"),
+                          child: Text("Proceed Test"),
                           onPressed: () {
-                            if (_formKey.currentState.validate()) {
-                              _formKey.currentState.save();
+                            
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => DriverDocuments()),
+                                    builder: (context) => DriverDocuments(phoneno: phoneno,)),
                               );
-                            }
+                            
                           },
                         ),
+                        ],
                       )
                     ],
                   ),

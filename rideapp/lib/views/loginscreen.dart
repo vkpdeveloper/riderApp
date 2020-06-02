@@ -20,76 +20,80 @@ class _LoginScreenState extends State<LoginScreen> {
   FirebaseUtils _utils = FirebaseUtils();
 
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-    TextEditingController _pinEditingController = TextEditingController();
+  TextEditingController _pinEditingController = TextEditingController();
 
-    Future<FirebaseUser> signIn(AuthCredential authCreds) async {
-      try{
-        AuthResult result = await _firebaseAuth.signInWithCredential(authCreds);
-        return result.user;
-      } catch(e) {
-        Fluttertoast.showToast(msg: "Invalid OTP Code");
-      }
+  Future<FirebaseUser> signIn(AuthCredential authCreds) async {
+    try {
+      AuthResult result = await _firebaseAuth.signInWithCredential(authCreds);
+      return result.user;
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Invalid OTP Code");
+      return null;
     }
+  }
 
-    signInWithOTP(smsCode, verId) async {
-      AuthCredential authCreds = PhoneAuthProvider.getCredential(
-          verificationId: verId, smsCode: smsCode);
-      FirebaseUser _user = await signIn(authCreds);
-      assert(_user.uid != null);
+  signInWithOTP(smsCode, verId) async {
+    AuthCredential authCreds = PhoneAuthProvider.getCredential(
+        verificationId: verId, smsCode: smsCode);
+    FirebaseUser _user = await signIn(authCreds);
+    assert(_user.uid != null);
+    if (_user != null) {
       print(_user.uid);
       Navigator.pushReplacementNamed(context, '/customerscreen');
     }
+  }
 
-    Future<void> verifyPhone(phoneNo) async {
-      final PhoneVerificationCompleted verified =
-          (AuthCredential authResult) async {
-        FirebaseUser _user = await signIn(authResult);
-        assert(_user.uid != null);
+  Future<void> verifyPhone(phoneNo) async {
+    final PhoneVerificationCompleted verified =
+        (AuthCredential authResult) async {
+      FirebaseUser _user = await signIn(authResult);
+      if (_user != null) {
         print(_user.uid);
         Navigator.pushReplacementNamed(context, '/customerscreen');
-      };
+      }
+    };
 
-      final PhoneVerificationFailed verificationfailed =
-          (AuthException authException) {
-        print('${authException.message}');
-      };
+    final PhoneVerificationFailed verificationfailed =
+        (AuthException authException) {
+      print('${authException.message}');
+    };
 
-      final PhoneCodeSent smsSent = (String verId, [int forceResend]) {
-        this.verificationId = verId;
-        setState(() {
-          this.codeSent = true;
-        });
-      };
+    final PhoneCodeSent smsSent = (String verId, [int forceResend]) {
+      this.verificationId = verId;
+      setState(() {
+        this.codeSent = true;
+      });
+    };
 
-      final PhoneCodeAutoRetrievalTimeout autoTimeout = (String verId) {
-        this.verificationId = verId;
-      };
+    final PhoneCodeAutoRetrievalTimeout autoTimeout = (String verId) {
+      this.verificationId = verId;
+    };
 
-      await _auth.verifyPhoneNumber(
-          phoneNumber: phoneNo,
-          timeout: const Duration(seconds: 60),
-          verificationCompleted: verified,
-          verificationFailed: verificationfailed,
-          codeSent: smsSent,
-          codeAutoRetrievalTimeout: autoTimeout);
-    }
+    await _auth.verifyPhoneNumber(
+        phoneNumber: phoneNo,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: verified,
+        verificationFailed: verificationfailed,
+        codeSent: smsSent,
+        codeAutoRetrievalTimeout: autoTimeout);
+  }
 
-    Future<void> googleSignIn() async {
-      GoogleSignInAccount googleSignInAccount = await _googleSignIn.signIn();
-      GoogleSignInAuthentication googleSignInAuthentication =
-          await googleSignInAccount.authentication;
+  Future<void> googleSignIn() async {
+    GoogleSignInAccount googleSignInAccount = await _googleSignIn.signIn();
+    GoogleSignInAuthentication googleSignInAuthentication =
+        await googleSignInAccount.authentication;
 
-      AuthCredential credential = GoogleAuthProvider.getCredential(
-          idToken: googleSignInAuthentication.idToken,
-          accessToken: googleSignInAuthentication.accessToken);
+    AuthCredential credential = GoogleAuthProvider.getCredential(
+        idToken: googleSignInAuthentication.idToken,
+        accessToken: googleSignInAuthentication.accessToken);
 
-      AuthResult result = (await _auth.signInWithCredential(credential));
-      assert(result.user.uid != null);
-      _user = result.user;
-      print(_user.uid);
-      _utils.saveGoogleLoginData();
-      Navigator.pushReplacementNamed(context, '/homescreen');
-    }
+    AuthResult result = (await _auth.signInWithCredential(credential));
+    assert(result.user.uid != null);
+    _user = result.user;
+    print(_user.uid);
+    _utils.saveGoogleLoginData();
+    Navigator.pushReplacementNamed(context, '/homescreen');
+  }
 
   GoogleSignIn _googleSignIn = GoogleSignIn();
 

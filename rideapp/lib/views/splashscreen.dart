@@ -40,10 +40,20 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
+  FirebaseUtils _utils = FirebaseUtils();
+
   @override
   Widget build(BuildContext context) {
-    UserPreferences userPrefs = Provider.of<UserPreferences>(context);
-    userPrefs.init();
+    void runFunc() async {
+      if (await _utils.getLoggedIn()) {
+        UserPreferences userPreferences =
+            Provider.of<UserPreferences>(context, listen: false);
+        userPreferences.init();
+      }
+    }
+
+    runFunc();
+
     return Scaffold(
       backgroundColor: ThemeColors.primaryColor,
       body: Container(

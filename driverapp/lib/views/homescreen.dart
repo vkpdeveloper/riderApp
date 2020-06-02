@@ -1,11 +1,42 @@
 import 'dart:async';
 
+import 'package:driverapp/controllers/firebase_utils.dart';
+import 'package:driverapp/views/signup/Verification.dart';
+import 'package:driverapp/views/splashscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:driverapp/constants/themecolors.dart';
 import 'package:driverapp/services/firebase_auth_service.dart';
+
+// to check if user exists in vendor list
+
+class VerificationCheck extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final _fireutils = FirebaseUtils();
+    Future vendorexists = _fireutils.isVendorExists();
+    return FutureBuilder(
+      future: vendorexists,
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        if (snapshot.hasData) {
+          final _exists = snapshot.data;
+          if (_exists) {
+            return HomeScreen();
+          }
+          return Verification();
+        } else {
+          return Container(
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+      },
+    );
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -71,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ListTile(
+              onTap: () => Navigator.pushNamed(context, '/updateprofile'),
               leading:
                   Icon(Icons.person_outline, color: ThemeColors.primaryColor),
               title: Text(

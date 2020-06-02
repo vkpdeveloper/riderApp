@@ -2,6 +2,8 @@ import 'package:driverapp/providers/auth_provider.dart';
 import 'package:driverapp/providers/signup_provider.dart';
 import 'package:driverapp/views/profilescreen.dart';
 import 'package:driverapp/views/ridesscreen.dart';
+import 'package:driverapp/views/signup/Verification.dart';
+import 'package:driverapp/views/update_profile.dart';
 import 'package:driverapp/views/walletscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -46,11 +48,13 @@ class MyApp extends StatelessWidget {
           initialRoute: '/',
           routes: {
             '/loginscreen': (context) => LoginScreen(),
-            '/homescreen': (context) => HomeScreen(),
+            '/homescreen': (context) => VerificationCheck(),
             '/signup': (context) => DriverDetails(),
             '/walletscreen': (context) => WalletScreen(),
             '/ridesscreen': (context) => RidesScreen(),
             '/profilescreen': (context) => Profile(),
+            '/updateprofile': (context) => UpdateProfile(),
+            '/verification': (cotext)=> Verification(),
           },
           theme: ThemeData(
               textTheme: GoogleFonts.openSansTextTheme(),

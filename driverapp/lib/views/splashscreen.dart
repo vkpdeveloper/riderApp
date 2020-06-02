@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:driverapp/views/homescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:driverapp/constants/themecolors.dart';
@@ -7,7 +8,7 @@ import 'package:driverapp/controllers/firebase_utils.dart';
 import 'package:driverapp/services/firebase_auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key key,  this.userSnapshot}) : super(key: key);
+  const SplashScreen({Key key, this.userSnapshot}) : super(key: key);
   final AsyncSnapshot<User> userSnapshot;
 
   @override
@@ -16,18 +17,33 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   FirebaseUtils _firebaseUtils = FirebaseUtils();
+  bool vendorexists;
+
+  // getvendorexist() async {
+  //   String userphoneno = await _firebaseUtils.getuserphoneno();
+  //   vendorexists = await _firebaseUtils.isVendorExists();
+  // }
 
   @override
   void initState() {
     super.initState();
+    // getvendorexist();
     getStartHomeScreen();
   }
 
   void getStartHomeScreen() {
     Timer(Duration(seconds: 3), () async {
-      if(await _firebaseUtils.getLoggedIn()){
-         Navigator.pushReplacementNamed(context, '/homescreen');
-      }else {
+      if (await _firebaseUtils.getLoggedIn()) {
+        // if (vendorexists) {
+        //   Navigator.pushReplacementNamed(context, '/homescreen');
+        // } else {
+        //   Navigator.pushReplacementNamed(context, '/verification');
+        // }
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (BuildContext context) => VerificationCheck()));
+      } else {
         Navigator.pushReplacementNamed(context, '/loginscreen');
       }
     });

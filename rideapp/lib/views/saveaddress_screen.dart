@@ -9,11 +9,6 @@ import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/user_provider.dart';
 
 class SavedAddress extends StatefulWidget {
-
-  final bool isFromHome;
-
-  const SavedAddress({Key key, this.isFromHome}) : super(key: key);
-
   @override
   _SavedAddressState createState() => _SavedAddressState();
 }
@@ -25,18 +20,19 @@ class _SavedAddressState extends State<SavedAddress> {
   bool _isFromHome = false;
 
   @override
-  void initState() { 
+  void initState() {
     super.initState();
-    _isFromHome = widget.isFromHome;
   }
 
   @override
   Widget build(BuildContext context) {
     UserPreferences userPreferences = Provider.of<UserPreferences>(context);
-    LocationViewProvider locationViewProvider = Provider.of<LocationViewProvider>(context);
+    LocationViewProvider locationViewProvider =
+        Provider.of<LocationViewProvider>(context);
     String address = "";
     LatLng latLng;
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         actions: <Widget>[
           FlatButton(
@@ -162,12 +158,16 @@ class _SavedAddressState extends State<SavedAddress> {
                 children:
                     snapshot.data.documents.map((DocumentSnapshot address) {
                   return ListTile(
-                    onTap: _isFromHome ? () {
-                      locationViewProvider.setAddress(address.data['address']);
-                      LatLng latlng = LatLng(address.data['latlng'][0], address.data['latlng'][1]);
-                      locationViewProvider.setDestinationLatLng(latlng);
-                      Navigator.of(context).pop();
-                    } : null,
+                    onTap: _isFromHome
+                        ? () {
+                            locationViewProvider
+                                .setAddress(address.data['address']);
+                            LatLng latlng = LatLng(address.data['latlng'][0],
+                                address.data['latlng'][1]);
+                            locationViewProvider.setDestinationLatLng(latlng);
+                            Navigator.of(context).pop();
+                          }
+                        : null,
                     leading: Icon(Icons.location_on),
                     title: Text(
                       address.data['address'],

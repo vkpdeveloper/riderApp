@@ -2,14 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:driverapp/providers/auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class FirebaseUtils {
   FirebaseAuth _auth = FirebaseAuth.instance;
 
-  CollectionReference _firestoreUser = Firestore.instance.collection('user');
+  CollectionReference _firestoreUser =
+      Firestore.instance.collection('driverSignup');
 
   FirebaseMessaging _messaging = FirebaseMessaging();
+
+  Future<String> getuserphoneno() async {
+    FirebaseUser user = await getCurrentUser();
+    return user.phoneNumber;
+  }
 
   Future<bool> getLoggedIn() async {
     try {
@@ -24,20 +31,44 @@ class FirebaseUtils {
     return _auth.currentUser();
   }
 
+  Future getverificationStatus() async {
+    FirebaseUser user = await _auth.currentUser();
+
+    DocumentSnapshot snapshot = await _firestoreUser.document(user.uid).get();
+    return snapshot.data;
+  }
+
   Future<String> getCurrentUserToken() async {
     return _messaging.getToken();
   }
 
-  Future<void> saveGivenData(String firstName, String lastName) async {
+  //to get new signups in collection according to time and to get verification status
+  Future<void> saveFirsttimeData() async {
     FirebaseUser user = await _auth.currentUser();
-    String token = await getCurrentUserToken();
     Map<String, dynamic> data = {
-      "name": "${firstName} ${lastName}",
-      "phone": user.phoneNumber ?? "",
-      "token": token,
-      "email": user.email ?? ""
+      "time": Timestamp.now(),
+      "verified": false,
     };
     await _firestoreUser.document(user.uid).setData(data, merge: true);
+  }
+
+  Future<void> saveUserDetails(String name, String phoneno, String gstin,
+      String vehiclemodel, String vehiclenumber, String city) async {
+    FirebaseUser user = await _auth.currentUser();
+    Map<String, dynamic> data = {
+      "name": name,
+      "phoneno": phoneno,
+      "gstin": gstin,
+      "vehiclemodel": vehiclemodel,
+      "vehiclenumber": vehiclenumber,
+      "city": city,
+      "timeuploaded": Timestamp.now(),
+    };
+    await _firestoreUser
+        .document(user.uid)
+        .collection("details")
+        .document("$phoneno")
+        .setData(data, merge: true);
   }
 
   Future<List<String>> getAllListOfTrucks() async {
@@ -50,7 +81,8 @@ class FirebaseUtils {
     return allTrucks;
   }
 
-  Future<bool> isVendorExists(String phone) async {
+  Future isVendorExists() async {
+    String phone = await getuserphoneno();
     DocumentSnapshot snapshot =
         await Firestore.instance.collection('vendor').document(phone).get();
     return snapshot.exists;
@@ -89,10 +121,14 @@ class FirebaseUtils {
 
   Future<FirebaseUser> loginWithOTP(AuthProvider provider) async {
     try {
-      AuthCredential credential = PhoneAuthProvider.getCredential(verificationId: provider.verificationID, smsCode: provider.smsCode);
-    AuthResult result = await _auth.signInWithCredential(credential);
-    if(result.user.uid != null) return result.user;
-    } catch(e) {
+      AuthCredential credential = PhoneAuthProvider.getCredential(
+          verificationId: provider.verificationID, smsCode: provider.smsCode);
+      AuthResult result = await _auth.signInWithCredential(credential);
+      if (result.additionalUserInfo.isNewUser) {
+        saveFirsttimeData();
+      }
+      if (result.user.uid != null) return result.user;
+    } catch (e) {
       print(e.toString());
       Fluttertoast.showToast(msg: "Wrong OTP");
     }

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class SignUpProvider with ChangeNotifier {
-
   String _name;
   String _phone;
   String _vehicleName;
   String _vehicleNumber;
   bool _isDriver;
   String _cityName;
+  String _gstin;
 
   SignUpProvider() {
     _name = "";
@@ -16,6 +16,7 @@ class SignUpProvider with ChangeNotifier {
     _vehicleNumber = "";
     _isDriver = false;
     _cityName = "";
+    _gstin = "";
   }
 
   String get getName => _name;
@@ -24,7 +25,7 @@ class SignUpProvider with ChangeNotifier {
   String get getVehicleNumber => _vehicleNumber;
   bool get getIsDriver => _isDriver;
   String get getCityName => _cityName;
-
+  String get getGstin => _gstin;
 
   void setName(String name) {
     _name = name;
@@ -56,5 +57,8 @@ class SignUpProvider with ChangeNotifier {
     notifyListeners();
   }
 
-
+  void setIGstin(String gstin) {
+    _gstin = gstin;
+    notifyListeners();
+  }
 }

@@ -1,28 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:android_intent/android_intent.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:google_map_location_picker/google_map_location_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
-import 'package:rideapp/controllers/static_utils.dart';
 import 'package:rideapp/enums/locationview.dart';
-import 'package:rideapp/model/auto_complete_item.dart';
-import 'package:rideapp/model/nearby_places.dart';
+import 'package:rideapp/model/location_details.dart';
+import 'package:rideapp/model/location_result.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/orderprovider.dart';
 import 'package:rideapp/providers/user_provider.dart';
 import 'package:rideapp/services/firebase_auth_service.dart';
 import 'package:rideapp/utils/uuid.dart';
-import 'package:rideapp/views/saveaddress_screen.dart';
-import 'package:rideapp/widgets/rich_suggestion.dart';
+import 'package:rideapp/views/drop_location_screen.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:http/http.dart' as http;
 
@@ -32,83 +28,89 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  GoogleMapController _mapsController;
+  GoogleMapController _googleMapController;
+  PanelController _controller;
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool isLocalSelected = true;
+  bool isOutSideSelected = false;
   LatLng initLatLng;
-  bool isBottomSheetEnabled = false;
-  StaticUtils _utils = StaticUtils();
-  Set<Marker> _markers = {};
-  BitmapDescriptor pinLocationIcon;
+  TextEditingController _pickUpController;
+  TextEditingController _destinationController;
   bool isPanelOpenComplete = false;
-  String sessionToken;
-
-  OverlayEntry overlayEntry;
-  List<NearbyPlace> nearbyPlaces = List();
-  var appBarKey = GlobalKey();
-  LocationResult locationResult;
-  bool hasSearchTerm = false;
-  LatLng _lastMapPos;
-  final _searchQuery = new TextEditingController();
+  FocusNode _pickFocusNode = FocusNode();
+  FocusNode _mainFocusNode = FocusNode();
+  String mainAddress;
   Timer _debounce;
-  FocusNode _searchQueryNode;
-  bool isFirstTimeOpen = true;
+  bool hasSearchTerm = false;
+  bool isSearchingCurrently = false;
+  String searchVal = "";
+  String googleMapsAPIKeys = APIKeys.googleMapsAPI;
+  LocationResult locationResult;
+  String sessionToken = Uuid().generateV4();
+  List<LocationDetails> allLocations = [];
+  Set<Polyline> _polyLines = {};
 
-  _onSearchChanged() {
-    if (_debounce?.isActive ?? false) _debounce.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      searchPlace(_searchQuery.text);
+  getCurrentLocation() async {
+    bool status = Geolocator().forceAndroidLocationManager;
+    print(status);
+    Geolocator()
+        .checkGeolocationPermissionStatus()
+        .then((GeolocationStatus status) {
+      print(status);
+    });
+    Geolocator().getCurrentPosition().then((value) async {
+      List<Address> allAddresses = await Geocoder.local
+          .findAddressesFromCoordinates(
+              Coordinates(value.latitude, value.longitude));
+      setState(() {
+        initLatLng = LatLng(value.latitude, value.longitude);
+        mainAddress = allAddresses[0].addressLine;
+        _pickUpController.text = mainAddress;
+      });
     });
   }
 
-  void clearOverlay() {
-    if (overlayEntry != null) {
-      overlayEntry.remove();
-      overlayEntry = null;
-    }
+  @override
+  void initState() {
+    super.initState();
+    _controller = PanelController();
+    _pickUpController = TextEditingController();
+    _destinationController = TextEditingController();
+    _pickUpController.addListener(_onSearchChangedPickUp);
+    _destinationController.addListener(_onSearchChangedDrop);
+    getCurrentLocation();
+  }
+
+  _onSearchChangedPickUp() {
+    if (_debounce?.isActive ?? false) _debounce.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      searchPlace(_pickUpController.text);
+    });
+  }
+
+  moveCamera(LatLng latLng) {
+    _googleMapController.animateCamera(CameraUpdate.newCameraPosition(
+        CameraPosition(zoom: 18.0, tilt: 70.0, bearing: 180, target: latLng)));
+  }
+
+  _onSearchChangedDrop() {
+    if (_debounce?.isActive ?? false) _debounce.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      searchPlace(_destinationController.text);
+    });
   }
 
   void searchPlace(String place) {
     if (_scaffoldKey.currentContext == null) return;
 
-    clearOverlay();
-
     setState(() => hasSearchTerm = place.length > 0);
 
     if (place.length < 1) return;
 
-    final RenderBox renderBox = _scaffoldKey.currentContext.findRenderObject();
-    Size size = renderBox.size;
-
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: 160,
-        width: MediaQuery.of(context).size.width,
-        child: Material(
-          elevation: 1,
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            child: Row(
-              children: <Widget>[
-                SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(strokeWidth: 3),
-                ),
-                SizedBox(width: 24),
-                Expanded(
-                  child: Text(
-                    'Finding place...',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    Overlay.of(context).insert(overlayEntry);
+    setState(() {
+      isSearchingCurrently = true;
+      searchVal = "Searching locations...";
+    });
 
     autoCompleteSearch(place);
   }
@@ -117,747 +119,552 @@ class _HomeScreenState extends State<HomeScreen> {
     place = place.replaceAll(" ", "+");
     var endpoint =
         "https://maps.googleapis.com/maps/api/place/autocomplete/json?" +
-            "key=${APIKeys.googleMapsAPI}&" +
+            "key=${googleMapsAPIKeys}&" +
             "input={$place}&sessiontoken=$sessionToken";
 
     if (locationResult != null) {
       endpoint += "&location=${locationResult.latLng.latitude}," +
           "${locationResult.latLng.longitude}";
     }
-    LocationUtils.getAppHeaders()
-        .then((headers) => http.get(endpoint, headers: headers))
-        .then((response) {
+    http.get(endpoint).then((response) {
       if (response.statusCode == 200) {
         Map<String, dynamic> data = jsonDecode(response.body);
-        print(data);
         List<dynamic> predictions = data['predictions'];
-
-        List<RichSuggestion> suggestions = [];
-
+        allLocations.clear();
         if (predictions.isEmpty) {
-          AutoCompleteItem aci = AutoCompleteItem();
-          aci.text = 'No result found';
-          aci.offset = 0;
-          aci.length = 0;
-
-          suggestions.add(RichSuggestion(aci, () {}));
+          setState(() => searchVal = "No result found");
         } else {
-          for (dynamic t in predictions) {
-            AutoCompleteItem aci = AutoCompleteItem();
-
-            aci.id = t['place_id'];
-            aci.text = t['description'];
-            aci.offset = t['matched_substrings'][0]['offset'];
-            aci.length = t['matched_substrings'][0]['length'];
-
-            suggestions.add(RichSuggestion(aci, () {
-              decodeAndSelectPlace(aci.id);
-            }));
+          for (dynamic single in predictions) {
+            LocationDetails detail = LocationDetails(
+                locationAddress: single['description'],
+                locationID: single['place_id']);
+            allLocations.add(detail);
           }
+          setState(() => isSearchingCurrently = false);
         }
-
-        displayAutoCompleteSuggestions(suggestions);
       }
-    }).catchError((error) {
-      print("Error : ${error}");
     });
   }
 
-  void decodeAndSelectPlace(String placeId) {
-    clearOverlay();
-
+  Future<LatLng> decodeAndSelectPlace(String placeId) async {
     String endpoint =
-        "https://maps.googleapis.com/maps/api/place/details/json?key=${APIKeys.googleMapsAPI}" +
-            "&placeid=$placeId";
+        "https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=$googleMapsAPIKeys";
 
-    LocationUtils.getAppHeaders()
-        .then((headers) => http.get(endpoint, headers: headers))
-        .then((response) {
-      if (response.statusCode == 200) {
-        Map<String, dynamic> location =
-            jsonDecode(response.body)['result']['geometry']['location'];
-
-        LatLng latLng = LatLng(location['lat'], location['lng']);
-
-        moveToLocation(latLng);
-      }
-    }).catchError((error) {
-      print(error);
-    });
-  }
-
-  void moveToLocation(LatLng latLng) {
-    _searchQueryNode.unfocus();
-    _mapsController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: latLng,
-          zoom: 16,
-        ),
-      ),
-    );
-
-    clearOverlay();
-
-    reverseGeocodeLatLng(latLng);
-
-    getNearbyPlaces(latLng);
-  }
-
-  void getNearbyPlaces(LatLng latLng) {
-    LocationUtils.getAppHeaders()
-        .then((headers) => http.get(
-            "https://maps.googleapis.com/maps/api/place/nearbysearch/json?" +
-                "key=${APIKeys.googleMapsAPI}&" +
-                "location=${latLng.latitude},${latLng.longitude}&radius=150",
-            headers: headers))
-        .then((response) {
-      if (response.statusCode == 200) {
-        nearbyPlaces.clear();
-        for (Map<String, dynamic> item
-            in jsonDecode(response.body)['results']) {
-          NearbyPlace nearbyPlace = NearbyPlace();
-
-          nearbyPlace.name = item['name'];
-          nearbyPlace.icon = item['icon'];
-          double latitude = item['geometry']['location']['lat'];
-          double longitude = item['geometry']['location']['lng'];
-
-          LatLng _latLng = LatLng(latitude, longitude);
-
-          nearbyPlace.latLng = _latLng;
-
-          nearbyPlaces.add(nearbyPlace);
-        }
-      }
-      setState(() {
-        hasSearchTerm = false;
-      });
-    }).catchError((error) {});
-  }
-
-  Future reverseGeocodeLatLng(LatLng latLng) async {
-    var response = await http.get(
-        "https://maps.googleapis.com/maps/api/geocode/json?latlng=${latLng.latitude},${latLng.longitude}"
-        "&key=${APIKeys.googleMapsAPI}",
-        headers: await LocationUtils.getAppHeaders());
-
-    if (response.statusCode == 200) {
-      Map<String, dynamic> responseJson = jsonDecode(response.body);
-
-      String road;
-
-      if (responseJson['status'] == 'REQUEST_DENIED') {
-        road = 'REQUEST DENIED = please see log for more details';
-        print(responseJson['error_message']);
-      } else {
-        road =
-            responseJson['results'][0]['address_components'][0]['short_name'];
-      }
-
-      setState(() {
-        locationResult = LocationResult();
-        locationResult.address = road;
-        locationResult.latLng = latLng;
-      });
-    }
-  }
-
-  void displayAutoCompleteSuggestions(List<RichSuggestion> suggestions) {
-    final RenderBox renderBox = _scaffoldKey.currentContext.findRenderObject();
-    Size size = renderBox.size;
-
-    clearOverlay();
-
-    overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: MediaQuery.of(context).size.width,
-        top: 160,
-        child: Material(
-          elevation: 1,
-          child: Column(
-            children: suggestions,
-          ),
-        ),
-      ),
-    );
-
-    Overlay.of(context).insert(overlayEntry);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    getCurrentLocation();
-    _searchQuery.addListener(_onSearchChanged);
-    sessionToken = Uuid().generateV4();
-    _searchQueryNode = FocusNode();
-    _utils.getBytesFromAsset('asset/images/marker.png', 64).then((value) {
-      pinLocationIcon = BitmapDescriptor.fromBytes(value);
-    });
-  }
-
-  void dispose() {
-    super.dispose();
-    _searchQueryNode.dispose();
-    _searchQuery.removeListener(_onSearchChanged);
-    _searchQuery.dispose();
-  }
-
-  showCurrentLocationOnSheet(LocationViewProvider provider) async {
-    final Coordinates coordinates =
-        Coordinates(initLatLng.latitude, initLatLng.longitude);
-    List<Address> address =
-        await Geocoder.local.findAddressesFromCoordinates(coordinates);
-    provider.setAddress(address[0].addressLine);
-  }
-
-  getCurrentLocation() async {
-    final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
-
-    geolocator
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
-        .then((Position position) async {
-      setState(() {
-        initLatLng = LatLng(position.latitude, position.longitude);
-      });
-    }).catchError((e) {
-      print(e);
-    });
-  }
-
-  showStationPickerDialog(BuildContext context) {
-    return showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (context) {
-          OrderProvider orderProvider = Provider.of<OrderProvider>(context);
-          return AlertDialog(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0)),
-              actions: <Widget>[
-                FlatButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text("Done"),
-                    textColor: ThemeColors.primaryColor)
-              ],
-              title: Text("Select Ride Type"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  RadioListTile(
-                    groupValue: orderProvider.getRideType,
-                    value: 0,
-                    activeColor: ThemeColors.primaryColor,
-                    title: Text("Local"),
-                    onChanged: (val) {
-                      orderProvider.setGroupRideType(val);
-                    },
-                  ),
-                  RadioListTile(
-                    groupValue: orderProvider.getRideType,
-                    value: 1,
-                    activeColor: ThemeColors.primaryColor,
-                    title: Text("Outside Station"),
-                    onChanged: (val) {
-                      orderProvider.setGroupRideType(val);
-                    },
-                  )
-                ],
-              ));
-        });
+    http.Response response = await http.get(endpoint);
+    print(jsonDecode(response.body));
+    Map<String, dynamic> location =
+        jsonDecode(response.body)['result']['geometry']['location'];
+    LatLng latLng = LatLng(location['lat'], location['lng']);
+    return latLng;
   }
 
   @override
   Widget build(BuildContext context) {
-    final _auth = Provider.of<FirebaseAuthService>(context, listen: false);
-    OrderProvider orderProvider = Provider.of<OrderProvider>(context);
     UserPreferences userPreferences = Provider.of<UserPreferences>(context);
     LocationViewProvider locationViewProvider =
         Provider.of<LocationViewProvider>(context);
+    OrderProvider orderProvider = Provider.of<OrderProvider>(context);
+    FirebaseAuthService _auth =
+        Provider.of<FirebaseAuthService>(context, listen: false);
+    if (userPreferences.getUserName == "") {
+      userPreferences.init();
+    }
+    // _pickUpController.text = locationViewProvider.getPickUpPointAddress;
+    // _destinationController.text =
+    //     locationViewProvider.getDestinationPointAddress;
     return Scaffold(
-      drawer: Drawer(
-        elevation: 8.0,
-        child: Column(
+        drawer: Drawer(
+          elevation: 8.0,
+          child: Column(
+            children: <Widget>[
+              UserAccountsDrawerHeader(
+                accountName: Text(userPreferences.getUserName),
+                accountEmail: Text(userPreferences.getUserPhone != ""
+                    ? userPreferences.getUserPhone
+                    : userPreferences.getUserEmail),
+              ),
+              ListTile(
+                onTap: () =>
+                    Navigator.pushNamed(context, '/savedaddressscreen'),
+                leading:
+                    Icon(Icons.location_city, color: ThemeColors.primaryColor),
+                title: Text(
+                  "Saved Address",
+                  style: TextStyle(color: ThemeColors.primaryColor),
+                ),
+              ),
+              ListTile(
+                onTap: () => Navigator.pushNamed(context, '/walletscreen'),
+                leading: Icon(Icons.account_balance_wallet,
+                    color: ThemeColors.primaryColor),
+                title: Text(
+                  "Wallet",
+                  style: TextStyle(color: ThemeColors.primaryColor),
+                ),
+              ),
+              ListTile(
+                leading:
+                    Icon(Icons.person_outline, color: ThemeColors.primaryColor),
+                title: Text(
+                  "Update Profile",
+                  style: TextStyle(color: ThemeColors.primaryColor),
+                ),
+              ),
+              ListTile(
+                onTap: () => Navigator.pushNamed(context, '/allordersscreen'),
+                leading:
+                    Icon(Icons.event_note, color: ThemeColors.primaryColor),
+                title: Text(
+                  "All Bookings",
+                  style: TextStyle(color: ThemeColors.primaryColor),
+                ),
+              ),
+              ListTile(
+                leading: Icon(Feather.info, color: ThemeColors.primaryColor),
+                title: GestureDetector(
+                  onTap: () {
+                    _auth.signOut();
+                    Navigator.pushReplacementNamed(context, '/loginscreen');
+                  },
+                  child: Text(
+                    "About",
+                    style: TextStyle(color: ThemeColors.primaryColor),
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: Icon(AntDesign.customerservice,
+                    color: ThemeColors.primaryColor),
+                title: GestureDetector(
+                  onTap: () {
+                    _auth.signOut();
+                    Navigator.pushReplacementNamed(context, '/loginscreen');
+                  },
+                  child: Text(
+                    "Support",
+                    style: TextStyle(color: ThemeColors.primaryColor),
+                  ),
+                ),
+              ),
+              ListTile(
+                leading:
+                    Icon(Icons.exit_to_app, color: ThemeColors.primaryColor),
+                title: GestureDetector(
+                  onTap: () {
+                    _auth.signOut();
+                    Navigator.pushReplacementNamed(context, '/loginscreen');
+                  },
+                  child: Text(
+                    "Logout",
+                    style: TextStyle(color: ThemeColors.primaryColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        key: _scaffoldKey,
+        body: SlidingUpPanel(
+          color: Colors.white,
+          controller: _controller,
+          parallaxEnabled: true,
+          isDraggable: true,
+          collapsed: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        isLocalSelected = true;
+                        isOutSideSelected = false;
+                      });
+                    },
+                    child: Container(
+                      height: 90,
+                      padding: const EdgeInsets.all(5.0),
+                      width: (MediaQuery.of(context).size.width / 2) - 20,
+                      margin: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                          border: isLocalSelected
+                              ? Border.all(
+                                  color: ThemeColors.primaryColor, width: 4.0)
+                              : null,
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10.0),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.grey.shade100, blurRadius: 10)
+                          ]),
+                      child: Column(
+                        children: <Widget>[
+                          Image.asset(
+                            "asset/images/map.png",
+                            height: 40,
+                            width: 40,
+                          ),
+                          Text(
+                            "Local",
+                            style: TextStyle(fontSize: 15.0),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        isLocalSelected = false;
+                        isOutSideSelected = true;
+                      });
+                    },
+                    child: Container(
+                      height: 90,
+                      width: (MediaQuery.of(context).size.width / 2) - 20,
+                      margin: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(5.0),
+                      decoration: BoxDecoration(
+                          border: isOutSideSelected
+                              ? Border.all(
+                                  color: ThemeColors.primaryColor, width: 4.0)
+                              : null,
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10.0),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.grey.shade100, blurRadius: 10)
+                          ]),
+                      child: Column(
+                        children: <Widget>[
+                          Image.asset(
+                            "asset/images/location.png",
+                            height: 40,
+                            width: 40,
+                          ),
+                          Text(
+                            "Outside Station",
+                            style: TextStyle(fontSize: 14.0),
+                          )
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              SizedBox(height: 10.0),
+              Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 10.0),
+                  height: 40.0,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 10.0),
+                  alignment: Alignment.topLeft,
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(blurRadius: 14.0, color: Colors.grey.shade100)
+                    ],
+                    color: ThemeColors.primaryColor,
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  child: Text(
+                    "Recents",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0,
+                        color: Colors.white),
+                  )),
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height / 5,
+                child: StreamBuilder(
+                  stream: Firestore.instance
+                      .collection('user')
+                      .document(userPreferences.getUserID)
+                      .collection('address')
+                      .limit(2)
+                      .snapshots(),
+                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting)
+                      return Center(
+                          child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            ThemeColors.primaryColor),
+                      ));
+                    if (snapshot.data.documents.length == 0) {
+                      return Center(child: Text("No recent locations"));
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: ListView(
+                          shrinkWrap: true,
+                          children: snapshot.data.documents
+                              .map((DocumentSnapshot data) {
+                            return ListTile(
+                              leading: Icon(Icons.watch_later),
+                              title: Text(
+                                data.data['address'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              )
+            ],
+          ),
+          onPanelClosed: () {
+            _pickFocusNode.unfocus();
+            setState(() {
+              isPanelOpenComplete = false;
+            });
+          },
+          onPanelOpened: () {
+            setState(() {
+              isPanelOpenComplete = true;
+              _pickUpController.text = mainAddress;
+            });
+          },
+          defaultPanelState: PanelState.CLOSED,
+          boxShadow: [BoxShadow(blurRadius: 10.0, color: Colors.grey.shade100)],
+          maxHeight: MediaQuery.of(context).size.height,
+          minHeight: (MediaQuery.of(context).size.height / 2) - 80,
+          panel: !isPanelOpenComplete
+              ? Container()
+              : Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
+                  child: Column(
+                    children: <Widget>[
+                      Align(
+                          alignment: Alignment.topLeft,
+                          child: Row(
+                            children: <Widget>[
+                              Icon(Octicons.primitive_dot, color: Colors.green),
+                              Text(
+                                  _pickFocusNode.hasFocus == true
+                                      ? "Pick Up Location"
+                                      : "Drop Location",
+                                  style: TextStyle(
+                                      fontSize: 16.0,
+                                      color: ThemeColors.primaryColor,
+                                      fontWeight: FontWeight.bold))
+                            ],
+                          )),
+                      SizedBox(height: 20),
+                      TextField(
+                        onChanged: (val) {
+                          locationViewProvider.setPickUpAddress(val);
+                        },
+                        onTap: () {
+                          locationViewProvider
+                              .setLocationView(LocationView.PICKUPSELECTED);
+                        },
+                        controller: _pickUpController,
+                        focusNode: _pickFocusNode,
+                        style: TextStyle(
+                            color: ThemeColors.primaryColor, fontSize: 16.0),
+                        autofocus: true,
+                        decoration: InputDecoration(
+                            prefixIcon: IconButton(
+                              icon: Icon(Icons.my_location),
+                              onPressed: () =>
+                                  _scaffoldKey.currentState.openDrawer(),
+                              color: ThemeColors.primaryColor,
+                            ),
+                            hintText: "Your Pickup Location",
+                            border: OutlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: ThemeColors.primaryColor),
+                              borderRadius: BorderRadius.circular(10),
+                            )),
+                      ),
+                      SizedBox(
+                        height: 15.0,
+                      ),
+                      TextField(
+                        onChanged: (val) {
+                          locationViewProvider.setDestinationPointAddress(val);
+                        },
+                        onTap: () {
+                          locationViewProvider.setLocationView(
+                              LocationView.DESTINATIONSELECTED);
+                        },
+                        controller: _destinationController,
+                        style: TextStyle(
+                            color: ThemeColors.primaryColor, fontSize: 16.0),
+                        decoration: InputDecoration(
+                            suffixIcon: IconButton(
+                                onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            DropLocationMap())),
+                                icon: Icon(Icons.location_on)),
+                            prefixIcon: IconButton(
+                              icon: Icon(Icons.my_location),
+                              onPressed: () =>
+                                  _scaffoldKey.currentState.openDrawer(),
+                              color: ThemeColors.primaryColor,
+                            ),
+                            hintText: "Your Drop Location",
+                            border: OutlineInputBorder(
+                              borderSide:
+                                  BorderSide(color: ThemeColors.primaryColor),
+                              borderRadius: BorderRadius.circular(10),
+                            )),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Divider(
+                        color: ThemeColors.primaryColor,
+                        height: 8.0,
+                      ),
+                      Expanded(
+                        child: ListView(
+                          shrinkWrap: true,
+                          scrollDirection: Axis.vertical,
+                          children: <Widget>[
+                            if (isSearchingCurrently)
+                              _isSearchingOrNotFound(searchVal),
+                            if (!isSearchingCurrently)
+                              for (LocationDetails detail in allLocations) ...[
+                                Container(
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.grey.shade100,
+                                            blurRadius: 14.0)
+                                      ]),
+                                  child: ListTile(
+                                    onTap: () async {
+                                      _controller.close();
+                                      LatLng getLatLng =
+                                          await decodeAndSelectPlace(
+                                              detail.locationID);
+                                      if (getLatLng != null) {
+                                        moveCamera(getLatLng);
+                                        locationViewProvider
+                                            .setAddress(detail.locationAddress);
+                                        if (locationViewProvider
+                                                .getLocationView ==
+                                            LocationView.PICKUPSELECTED) {
+                                          locationViewProvider
+                                              .setPickUpLatLng(getLatLng);
+                                        } else {
+                                          locationViewProvider
+                                              .setDestinationLatLng(getLatLng);
+                                        }
+                                      } else {
+                                        print(getLatLng);
+                                      }
+                                    },
+                                    title: Text(detail.locationAddress),
+                                  ),
+                                ),
+                                Divider()
+                              ]
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+          body: initLatLng == null
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(ThemeColors.primaryColor),
+                  ),
+                )
+              : Stack(
+                  children: <Widget>[
+                    GoogleMap(
+                      buildingsEnabled: true,
+                      polylines: _polyLines,
+                      mapType: MapType.normal,
+                      initialCameraPosition: CameraPosition(
+                        zoom: 18,
+                        target: initLatLng,
+                      ),
+                      onMapCreated: (controller) {
+                        _googleMapController = controller;
+                      },
+                    ),
+                    _buildSearch(context),
+                    _buildMyLocation(),
+                    pin(),
+                  ],
+                ),
+        ));
+  }
+
+  Widget _buildMyLocation() {
+    return Positioned(
+      bottom: (MediaQuery.of(context).size.height / 2 - 70),
+      right: 10.0,
+      child: FloatingActionButton(
+        onPressed: () => _googleMapController.animateCamera(
+            CameraUpdate.newCameraPosition(CameraPosition(
+                target: initLatLng, zoom: 18, bearing: 180, tilt: 60))),
+        child: Icon(Icons.my_location),
+        backgroundColor: ThemeColors.primaryColor,
+        foregroundColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildSearch(BuildContext context) {
+    return Positioned(
+      top: 40,
+      left: 20,
+      right: 20,
+      height: 60,
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        height: 60.0,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10.0),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(color: Colors.grey.shade100, blurRadius: 14.0)
+            ]),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            UserAccountsDrawerHeader(
-              accountName: Text(userPreferences.getUserName),
-              accountEmail: Text(userPreferences.getUserPhone != ""
-                  ? userPreferences.getUserPhone
-                  : userPreferences.getUserEmail),
+            IconButton(
+              icon: Icon(Icons.menu),
+              onPressed: () => _scaffoldKey.currentState.openDrawer(),
+              color: ThemeColors.primaryColor,
             ),
-            ListTile(
-              onTap: () => Navigator.pushNamed(context, '/savedaddressscreen'),
-              leading:
-                  Icon(Icons.location_city, color: ThemeColors.primaryColor),
-              title: Text(
-                "Saved Address",
-                style: TextStyle(color: ThemeColors.primaryColor),
-              ),
-            ),
-            ListTile(
-              onTap: () => Navigator.pushNamed(context, '/walletscreen'),
-              leading: Icon(Icons.account_balance_wallet,
-                  color: ThemeColors.primaryColor),
-              title: Text(
-                "Wallet",
-                style: TextStyle(color: ThemeColors.primaryColor),
-              ),
-            ),
-            ListTile(
-              leading:
-                  Icon(Icons.person_outline, color: ThemeColors.primaryColor),
-              title: Text(
-                "Update Profile",
-                style: TextStyle(color: ThemeColors.primaryColor),
-              ),
-            ),
-            ListTile(
-              onTap: () => Navigator.pushNamed(context, '/allordersscreen'),
-              leading: Icon(Icons.event_note, color: ThemeColors.primaryColor),
-              title: Text(
-                "All Bookings",
-                style: TextStyle(color: ThemeColors.primaryColor),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Feather.info, color: ThemeColors.primaryColor),
-              title: GestureDetector(
+            Expanded(
+              child: TextField(
+                focusNode: _mainFocusNode,
                 onTap: () {
-                  _auth.signOut();
-                  Navigator.pushReplacementNamed(context, '/loginscreen');
+                  _mainFocusNode.unfocus();
+                  _pickFocusNode.requestFocus();
+                  _controller.open();
                 },
-                child: Text(
-                  "About",
-                  style: TextStyle(color: ThemeColors.primaryColor),
-                ),
-              ),
-            ),
-            ListTile(
-              leading: Icon(AntDesign.customerservice,
-                  color: ThemeColors.primaryColor),
-              title: GestureDetector(
-                onTap: () {
-                  _auth.signOut();
-                  Navigator.pushReplacementNamed(context, '/loginscreen');
-                },
-                child: Text(
-                  "Support",
-                  style: TextStyle(color: ThemeColors.primaryColor),
-                ),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.exit_to_app, color: ThemeColors.primaryColor),
-              title: GestureDetector(
-                onTap: () {
-                  _auth.signOut();
-                  Navigator.pushReplacementNamed(context, '/loginscreen');
-                },
-                child: Text(
-                  "Logout",
-                  style: TextStyle(color: ThemeColors.primaryColor),
-                ),
+                style:
+                    TextStyle(color: ThemeColors.primaryColor, fontSize: 16.0),
+                decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: "Your Current Location",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none)),
               ),
             ),
           ],
         ),
       ),
-      key: _scaffoldKey,
-      body: SlidingUpPanel(
-        backdropEnabled: false,
-        defaultPanelState: PanelState.CLOSED,
-        isDraggable: true,
-        header: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Text("HELLO, ${userPreferences.getUserName}",
-                style: GoogleFonts.openSans(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22.0,
-                    color: Theme.of(context).primaryColor)),
-          ),
-        ),
-        onPanelClosed: () {
-          setState(() => isPanelOpenComplete = false);
-        },
-        onPanelOpened: () {
-          setState(() => isPanelOpenComplete = true);
-        },
-        collapsed: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 45.0),
-          child: InkWell(
-            onTap: () {
-              locationViewProvider.setLocationView(LocationView.PICKUPSELECTED);
-            },
-            child: Ink(
-              width: MediaQuery.of(context).size.width,
-              height: 50.0,
-              child: Column(
-                children: <Widget>[
-                  Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text("Pickup Point",
-                          style: TextStyle(
-                              fontSize: 14.0, color: Colors.black45))),
-                  Container(
-                    width: MediaQuery.of(context).size.width,
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.location_on,
-                            color: locationViewProvider.getLocationView ==
-                                    LocationView.PICKUPSELECTED
-                                ? Colors.blue
-                                : ThemeColors.primaryColor),
-                        SizedBox(width: 10.0),
-                        Flexible(
-                          child: Text(
-                            locationViewProvider.getPickUpPointAddress == "" ||
-                                    locationViewProvider
-                                            .getPickUpPointAddress ==
-                                        null
-                                ? "Fetching..."
-                                : locationViewProvider.getPickUpPointAddress,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                color: ThemeColors.primaryColor,
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        )
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ),
-        ),
-        margin: EdgeInsets.all(20.0),
-        borderRadius: BorderRadius.circular(15.0),
-        minHeight: (MediaQuery.of(context).size.height / 6),
-        maxHeight: (MediaQuery.of(context).size.height / 3 - 20),
-        panel: isPanelOpenComplete
-            ? Padding(
-                padding: const EdgeInsets.only(
-                    right: 15.0, left: 15.0, top: 30.0, bottom: 15),
-                child: Stack(
-                  children: [
-                    Column(
-                      children: <Widget>[
-                        SizedBox(
-                          height: 20.0,
-                        ),
-                        InkWell(
-                          onTap: () {
-                            locationViewProvider
-                                .setLocationView(LocationView.PICKUPSELECTED);
-                          },
-                          child: Ink(
-                            width: MediaQuery.of(context).size.width,
-                            height: 50.0,
-                            child: Column(
-                              children: <Widget>[
-                                Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text("Pickup Point",
-                                        style: TextStyle(
-                                            fontSize: 14.0,
-                                            color: Colors.black45))),
-                                Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  child: Row(
-                                    children: <Widget>[
-                                      Icon(Icons.location_on,
-                                          color: locationViewProvider
-                                                      .getLocationView ==
-                                                  LocationView.PICKUPSELECTED
-                                              ? Colors.blue
-                                              : ThemeColors.primaryColor),
-                                      SizedBox(width: 10.0),
-                                      Flexible(
-                                        child: Text(
-                                          locationViewProvider
-                                                          .getPickUpPointAddress ==
-                                                      "" ||
-                                                  locationViewProvider
-                                                          .getPickUpPointAddress ==
-                                                      null
-                                              ? "Fetching..."
-                                              : locationViewProvider
-                                                  .getPickUpPointAddress,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                              color: ThemeColors.primaryColor,
-                                              fontSize: 16.0,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 20.0,
-                        ),
-                        InkWell(
-                          onTap: () {
-                            locationViewProvider.setLocationView(
-                                LocationView.DESTINATIONSELECTED);
-                          },
-                          child: Ink(
-                            width: MediaQuery.of(context).size.width,
-                            height: 50.0,
-                            child: Column(
-                              children: <Widget>[
-                                Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text("Destination Point",
-                                        style: TextStyle(
-                                            fontSize: 14.0,
-                                            color: Colors.black45))),
-                                Stack(
-                                  overflow: Overflow.visible,
-                                  children: <Widget>[
-                                    Container(
-                                      width: MediaQuery.of(context).size.width,
-                                      child: Row(
-                                        children: <Widget>[
-                                          Icon(Icons.location_on,
-                                              color: locationViewProvider
-                                                          .getLocationView ==
-                                                      LocationView
-                                                          .DESTINATIONSELECTED
-                                                  ? Colors.blue
-                                                  : ThemeColors.primaryColor),
-                                          SizedBox(width: 10.0),
-                                          Flexible(
-                                            child: Text(
-                                              locationViewProvider
-                                                              .getDestinationPointAddress
-                                                              .toString() ==
-                                                          null ||
-                                                      locationViewProvider
-                                                              .getDestinationPointAddress ==
-                                                          ""
-                                                  ? "Not yet selected"
-                                                  : locationViewProvider
-                                                      .getDestinationPointAddress,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                  color:
-                                                      ThemeColors.primaryColor,
-                                                  fontSize: 16.0,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Positioned(
-                                        bottom: -10.0,
-                                        right: 0.0,
-                                        child: IconButton(
-                                          iconSize: 25.0,
-                                          onPressed: () {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        SavedAddress(
-                                                          isFromHome: true,
-                                                        )));
-                                            locationViewProvider
-                                                .setLocationView(LocationView
-                                                    .DESTINATIONSELECTED);
-                                          },
-                                          icon: Icon(Icons.more_vert),
-                                          color: ThemeColors.primaryColor,
-                                        ))
-                                  ],
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: FloatingActionButton(
-                            onPressed: () {
-                              if (true) {
-                                orderProvider
-                                    .setOrderPrice(locationViewProvider);
-                                Navigator.pushNamed(
-                                    context, '/orderdetailsscreen');
-                              }
-                            },
-                            backgroundColor: ThemeColors.primaryColor,
-                            foregroundColor: Colors.white,
-                            child: Icon(Icons.arrow_forward_ios)))
-                  ],
-                ),
-              )
-            : Container(),
-        body: GestureDetector(
-          onTap: () {
-            Focus.of(context).unfocus();
-            clearOverlay();
-          },
-          child: Stack(
-            overflow: Overflow.visible,
-            children: <Widget>[
-              initLatLng != null
-                  ? Container(
-                      height: MediaQuery.of(context).size.height,
-                      width: MediaQuery.of(context).size.width,
-                      child: GoogleMap(
-                        // markers: _markers,
-                        // onTap: (LatLng newPosition) async {
-                        //   if (_markers.isNotEmpty) {
-                        //     _markers.clear();
-                        //   }
-                        //   _markers.add(Marker(
-                        //       markerId: MarkerId("1"),
-                        //       position: newPosition,
-                        //       icon: pinLocationIcon));
-                        //   setState(() {
-                        //     initLatLng = newPosition;
-                        //   });
-                        //   final Coordinates coordinates = Coordinates(
-                        //       newPosition.latitude, newPosition.longitude);
-                        //   locationViewProvider.setAddress("Fetching...");
-                        //   String myAddress =
-                        //       await _utils.getAddressOnCords(coordinates);
-                        //   locationViewProvider.setAddress(myAddress);
-                        //   if (locationViewProvider.getLocationView ==
-                        //       LocationView.PICKUPSELECTED)
-                        //     locationViewProvider.setPickUpLatLng(newPosition);
-                        //   else
-                        //     locationViewProvider
-                        //         .setDestinationLatLng(newPosition);
-                        // },
-                        onCameraMove: (CameraPosition position) {
-                          _lastMapPos = position.target;
-                        },
-                        onCameraIdle: () async {
-                          if (isFirstTimeOpen) {
-                            showCurrentLocationOnSheet(locationViewProvider);
-                            isFirstTimeOpen = false;
-                          } else {
-                            try {
-                              print(_lastMapPos);
-                              locationViewProvider.setMapLastPos(_lastMapPos);
-                              locationViewProvider.setAddress("");
-                              Coordinates coordinates = new Coordinates(
-                                  _lastMapPos.latitude, _lastMapPos.longitude);
-                              List<Address> addresses = await Geocoder.local
-                                  .findAddressesFromCoordinates(coordinates);
-                              String address = addresses[0].addressLine;
-                              if (locationViewProvider.getLocationView ==
-                                  LocationView.PICKUPSELECTED) {
-                                locationViewProvider
-                                    .setPickUpLatLng(locationResult.latLng);
-
-                                locationViewProvider.setPickUpAddress(address);
-                              } else {
-                                locationViewProvider.setDestinationLatLng(
-                                    locationResult.latLng);
-                                locationViewProvider
-                                    .setDestinationPointAddress(address);
-                              }
-                            } catch (e) {
-                              print(e.toString());
-                            }
-                          }
-                        },
-                        myLocationEnabled: true,
-                        buildingsEnabled: true,
-                        scrollGesturesEnabled: true,
-                        mapType: MapType.hybrid,
-                        trafficEnabled: true,
-                        zoomControlsEnabled: false,
-                        zoomGesturesEnabled: true,
-                        initialCameraPosition: CameraPosition(
-                            target: initLatLng,
-                            zoom: orderProvider.getRideType == 0 ? 14 : 8),
-                        onMapCreated: (GoogleMapController controller) {
-                          _mapsController = controller;
-                          showCurrentLocationOnSheet(locationViewProvider);
-                          locationViewProvider.setPickUpLatLng(initLatLng);
-                          showStationPickerDialog(context);
-                        },
-                      ))
-                  : Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            ThemeColors.primaryColor),
-                      ),
-                    ),
-              Positioned(
-                top: 30.0,
-                left: 20.0,
-                child: FloatingActionButton(
-                  heroTag: 'menu',
-                  materialTapTargetSize: MaterialTapTargetSize.padded,
-                  onPressed: () => _scaffoldKey.currentState.openDrawer(),
-                  backgroundColor: ThemeColors.primaryColor,
-                  foregroundColor: Colors.white,
-                  child: Icon(Icons.menu),
-                ),
-              ),
-              Positioned(
-                top: 30.0,
-                right: 20.0,
-                child: FloatingActionButton(
-                  heroTag: 'current',
-                  onPressed: () {
-                    _mapsController.animateCamera(
-                        CameraUpdate.newCameraPosition(
-                            CameraPosition(target: initLatLng, zoom: 14.0)));
-                  },
-                  backgroundColor: ThemeColors.primaryColor,
-                  foregroundColor: Colors.white,
-                  materialTapTargetSize: MaterialTapTargetSize.padded,
-                  child: Icon(Icons.my_location),
-                ),
-              ),
-              _buildSearchBar(context),
-              pin()
-            ],
-          ),
-        ),
-      ),
     );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Positioned(
-        top: 100,
-        left: 40,
-        right: 40,
-        child: Container(
-          width: MediaQuery.of(context).size.width - 80,
-          height: 150,
-          child: TextField(
-            focusNode: _searchQueryNode,
-            controller: _searchQuery,
-            decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderSide: BorderSide.none,
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                hintText: "Search Location"),
-          ),
-        ));
   }
 
   Widget pin() {
@@ -866,13 +673,17 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(Icons.place, size: 56),
+            Image.asset(
+              'asset/marker.png',
+              height: 45,
+              width: 45,
+            ),
             Container(
               decoration: ShapeDecoration(
                 shadows: [
                   BoxShadow(
                     blurRadius: 4,
-                    color: Colors.black38,
+                    color: ThemeColors.primaryColor,
                   ),
                 ],
                 shape: CircleBorder(
@@ -887,6 +698,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _isSearchingOrNotFound(String result) {
+    return ListTile(
+      title: Text(result),
     );
   }
 }
