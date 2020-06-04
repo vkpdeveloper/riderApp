@@ -113,11 +113,11 @@ class FirebaseUtils {
     QuerySnapshot allVendors = await _firestoreVendor.getDocuments();
     for (DocumentSnapshot vendor in allVendors.documents) {
       if (vendor.data['isFree']) {
-          print(vendor.data['userID']);
-          selectedVendor = vendor;
-          isVendorDetected = true;
-          break;
-        }
+        print(vendor.data['userID']);
+        selectedVendor = vendor;
+        isVendorDetected = true;
+        break;
+      }
     }
     if (isVendorDetected) {
       dialog.update(message: "Almost done...");
@@ -236,5 +236,14 @@ class FirebaseUtils {
                     orderID: orderID,
                   )));
     });
+  }
+
+  void updateProfile(
+      String name, String phone, String email, UserPreferences preferences) {
+    _firestoreUser.document(preferences.getUserID).updateData({
+      "name": name,
+      "email": email,
+      "phone": "+91$phone",
+    }).whenComplete(() => preferences.init());
   }
 }

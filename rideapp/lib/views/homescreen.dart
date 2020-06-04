@@ -3,7 +3,9 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_icons/flutter_icons.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -34,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLocalSelected = true;
   bool isOutSideSelected = false;
   LatLng initLatLng;
+  double zoomView = 18;
   TextEditingController _pickUpController;
   TextEditingController _destinationController;
   bool isPanelOpenComplete = false;
@@ -58,16 +61,25 @@ class _HomeScreenState extends State<HomeScreen> {
         .then((GeolocationStatus status) {
       print(status);
     });
-    Geolocator().getCurrentPosition().then((value) async {
-      List<Address> allAddresses = await Geocoder.local
-          .findAddressesFromCoordinates(
-              Coordinates(value.latitude, value.longitude));
+    try {
+      Position pos = await Geolocator().getCurrentPosition();
+      print(pos.latitude);
+      print(pos.longitude);
+      // List<Address> allAddresses = await Geocoder.local
+      //     .findAddressesFromCoordinates(
+      //         Coordinates(pos.latitude, pos.longitude));
+      http.Response res = await http.get(
+          'https://maps.googleapis.com/maps/api/geocode/json?latlng=${pos.latitude},${pos.longitude}&key=${APIKeys.googleMapsAPI}');
+      var data = jsonDecode(res.body);
+      var addressGet = data['results'][0]['formatted_address'];
       setState(() {
-        initLatLng = LatLng(value.latitude, value.longitude);
-        mainAddress = allAddresses[0].addressLine;
+        initLatLng = LatLng(pos.latitude, pos.longitude);
+        mainAddress = addressGet;
         _pickUpController.text = mainAddress;
       });
-    });
+    } on PlatformException catch (e) {
+      Fluttertoast.showToast(msg: "Error in getting address");
+    }
   }
 
   @override
@@ -169,9 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (userPreferences.getUserName == "") {
       userPreferences.init();
     }
-    // _pickUpController.text = locationViewProvider.getPickUpPointAddress;
-    // _destinationController.text =
-    //     locationViewProvider.getDestinationPointAddress;
     return Scaffold(
         drawer: Drawer(
           elevation: 8.0,
@@ -203,6 +212,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               ListTile(
+                onTap: () => Navigator.pushNamed(context, '/profile', arguments: {
+                  "pref": userPreferences,
+                }),
                 leading:
                     Icon(Icons.person_outline, color: ThemeColors.primaryColor),
                 title: Text(
@@ -222,10 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: Icon(Feather.info, color: ThemeColors.primaryColor),
                 title: GestureDetector(
-                  onTap: () {
-                    _auth.signOut();
-                    Navigator.pushReplacementNamed(context, '/loginscreen');
-                  },
+                  onTap: () {},
                   child: Text(
                     "About",
                     style: TextStyle(color: ThemeColors.primaryColor),
@@ -236,10 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 leading: Icon(AntDesign.customerservice,
                     color: ThemeColors.primaryColor),
                 title: GestureDetector(
-                  onTap: () {
-                    _auth.signOut();
-                    Navigator.pushReplacementNamed(context, '/loginscreen');
-                  },
+                  onTap: () {},
                   child: Text(
                     "Support",
                     style: TextStyle(color: ThemeColors.primaryColor),
@@ -279,7 +285,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() {
                         isLocalSelected = true;
                         isOutSideSelected = false;
+                        zoomView = 18;
                       });
+                      _googleMapController.animateCamera(
+                          CameraUpdate.newCameraPosition(CameraPosition(
+                        target: initLatLng,
+                        zoom: zoomView,
+                      )));
                     },
                     child: Container(
                       height: 90,
@@ -317,7 +329,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() {
                         isLocalSelected = false;
                         isOutSideSelected = true;
+                        zoomView = 14;
                       });
+                      _googleMapController.animateCamera(
+                          CameraUpdate.newCameraPosition(CameraPosition(
+                        target: initLatLng,
+                        zoom: zoomView,
+                      )));
                     },
                     child: Container(
                       height: 90,
@@ -400,6 +418,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: snapshot.data.documents
                               .map((DocumentSnapshot data) {
                             return ListTile(
+                              onTap: () {
+                                LatLng latLng = LatLng(data.data['latlng'][0],
+                                    data.data['latlng'][1]);
+                                _destinationController.text =
+                                    data.data['address'];
+                                locationViewProvider
+                                    .setDestinationLatLng(latLng);
+                                locationViewProvider.setDestinationPointAddress(
+                                    data.data['address']);
+                                _googleMapController.animateCamera(
+                                    CameraUpdate.newCameraPosition(
+                                        CameraPosition(
+                                            target: latLng, zoom: zoomView)));
+                              },
                               leading: Icon(Icons.watch_later),
                               title: Text(
                                 data.data['address'],
@@ -432,6 +464,26 @@ class _HomeScreenState extends State<HomeScreen> {
           boxShadow: [BoxShadow(blurRadius: 10.0, color: Colors.grey.shade100)],
           maxHeight: MediaQuery.of(context).size.height,
           minHeight: (MediaQuery.of(context).size.height / 2) - 80,
+          footer: !isPanelOpenComplete
+              ? Container()
+              : Padding(
+                  padding: EdgeInsets.only(
+                      left: MediaQuery.of(context).size.width - 60,
+                      bottom: 10,
+                      right: 20.0),
+                  child: Container(
+                      alignment: Alignment.bottomRight,
+                      child: FloatingActionButton(
+                        heroTag: "forward_order",
+                        onPressed: () {
+                          orderProvider.setOrderPrice(locationViewProvider);
+                          Navigator.pushNamed(context, '/orderdetailsscreen');
+                        },
+                        foregroundColor: Colors.white,
+                        backgroundColor: ThemeColors.primaryColor,
+                        child: Icon(Icons.arrow_forward_ios),
+                      )),
+                ),
           panel: !isPanelOpenComplete
               ? Container()
               : Padding(
@@ -547,17 +599,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                           await decodeAndSelectPlace(
                                               detail.locationID);
                                       if (getLatLng != null) {
+                                        mainAddress = detail.locationAddress;
                                         moveCamera(getLatLng);
                                         locationViewProvider
                                             .setAddress(detail.locationAddress);
                                         if (locationViewProvider
                                                 .getLocationView ==
                                             LocationView.PICKUPSELECTED) {
+                                          _pickUpController.text =
+                                              detail.locationAddress;
                                           locationViewProvider
                                               .setPickUpLatLng(getLatLng);
                                         } else {
+                                          _destinationController.text =
+                                              detail.locationAddress;
                                           locationViewProvider
                                               .setDestinationLatLng(getLatLng);
+                                          locationViewProvider
+                                              .setDestinationPointAddress(
+                                                  detail.locationAddress);
                                         }
                                       } else {
                                         print(getLatLng);
@@ -588,11 +648,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       polylines: _polyLines,
                       mapType: MapType.normal,
                       initialCameraPosition: CameraPosition(
-                        zoom: 18,
+                        zoom: zoomView,
                         target: initLatLng,
                       ),
                       onMapCreated: (controller) {
                         _googleMapController = controller;
+                        locationViewProvider.setPickUpLatLng(initLatLng);
+                        locationViewProvider.setPickUpAddress(mainAddress);
                       },
                     ),
                     _buildSearch(context),

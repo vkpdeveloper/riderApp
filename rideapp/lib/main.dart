@@ -15,6 +15,7 @@ import 'package:rideapp/views/orderdetailsscreen.dart';
 import 'package:rideapp/views/saveaddress_screen.dart';
 import 'package:rideapp/views/splashscreen.dart';
 import 'package:rideapp/views/walletscreen.dart';
+import 'package:rideapp/views/profile_screen.dart';
 
 void main() => runApp(MyApp());
 
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
             '/savedaddressscreen': (context) => SavedAddress(),
             '/allordersscreen': (context) => AllBookings(),
             '/orderdetailsscreen': (context) => OrderDetailsScreen(),
+            '/profile': (context) => ProfileScreen()
           },
           theme: ThemeData(
               textTheme: GoogleFonts.openSansTextTheme(),
