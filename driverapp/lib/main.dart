@@ -1,5 +1,7 @@
 import 'package:driverapp/providers/auth_provider.dart';
 import 'package:driverapp/providers/signup_provider.dart';
+import 'package:driverapp/providers/user_sharedpref_provider.dart';
+import 'package:driverapp/views/bookings.dart';
 import 'package:driverapp/views/profilescreen.dart';
 import 'package:driverapp/views/ridesscreen.dart';
 import 'package:driverapp/views/signup/Verification.dart';
@@ -10,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:driverapp/constants/themecolors.dart';
 import 'package:driverapp/providers/locationViewProvider.dart';
-import 'package:driverapp/providers/orderprovider.dart';
+import 'package:driverapp/providers/order_provider.dart';
 import 'package:driverapp/services/firebase_auth_service.dart';
 import 'package:driverapp/services/image_picker_service.dart';
 import 'package:driverapp/views/homescreen.dart';
@@ -28,6 +30,9 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(create: (context) => LocationViewProvider()),
           ChangeNotifierProvider(
             create: (context) => OrderProvider(),
+          ),
+          ChangeNotifierProvider(
+            create: (context) => UserPreferences(),
           ),
           ChangeNotifierProvider(
             create: (context) => SignUpProvider(),
@@ -54,7 +59,8 @@ class MyApp extends StatelessWidget {
             '/ridesscreen': (context) => RidesScreen(),
             '/profilescreen': (context) => Profile(),
             '/updateprofile': (context) => UpdateProfile(),
-            '/verification': (cotext)=> Verification(),
+            '/verification': (cotext) => Verification(),
+            '/bookings': (context) => Bookings(),
           },
           theme: ThemeData(
               textTheme: GoogleFonts.openSansTextTheme(),

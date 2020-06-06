@@ -1,4 +1,3 @@
-import 'package:driverapp/controllers/firebase_utils.dart';
 import 'package:driverapp/services/firebase_auth_service.dart';
 import 'package:driverapp/views/signup/driver_details.dart';
 import 'package:flutter/material.dart';

@@ -1,6 +1,5 @@
 import 'package:driverapp/providers/signup_provider.dart';
 import 'package:driverapp/views/signup/driver_documents.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:driverapp/controllers/firebase_utils.dart';

@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:driverapp/providers/user_sharedpref_provider.dart';
 import 'package:driverapp/views/homescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:driverapp/constants/themecolors.dart';
 import 'package:driverapp/controllers/firebase_utils.dart';
 import 'package:driverapp/services/firebase_auth_service.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key key, this.userSnapshot}) : super(key: key);
@@ -51,6 +53,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    UserPreferences userPreferences = Provider.of<UserPreferences>(context);
+    run() async {
+      if (await _firebaseUtils.getLoggedIn()) {
+        userPreferences.init();
+      }
+    }
+
+    run();
+
     return Scaffold(
       backgroundColor: ThemeColors.primaryColor,
       body: Container(

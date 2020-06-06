@@ -1,8 +1,6 @@
 import 'package:driverapp/constants/themecolors.dart';
 import 'package:driverapp/views/signup/driver_details.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_icons/flutter_icons.dart';
-import 'package:smooth_star_rating/smooth_star_rating.dart';
 
 class UpdateProfile extends StatefulWidget {
   @override

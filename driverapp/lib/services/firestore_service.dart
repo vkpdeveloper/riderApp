@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:driverapp/models/avatar_reference.dart';
 import 'package:driverapp/services/firestore_path.dart';
-import 'package:flutter/foundation.dart';
 
 class FirestoreService {
   FirestoreService({this.uid}) : assert(uid != null);

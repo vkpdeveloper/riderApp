@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:driverapp/providers/auth_provider.dart';
+import 'package:driverapp/providers/order_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class FirebaseUtils {
   FirebaseAuth _auth = FirebaseAuth.instance;
@@ -83,9 +86,13 @@ class FirebaseUtils {
 
   Future isVendorExists() async {
     String phone = await getuserphoneno();
-    DocumentSnapshot snapshot =
-        await Firestore.instance.collection('vendor').document(phone).get();
-    return snapshot.exists;
+    try {
+      DocumentSnapshot snapshot =
+          await Firestore.instance.collection('vendor').document(phone).get();
+      return snapshot.exists;
+    } on PlatformException catch (e) {
+      print(e.message);
+    }
   }
 
   Future<void> signInWithPhone(AuthProvider provider) async {
@@ -132,5 +139,25 @@ class FirebaseUtils {
       print(e.toString());
       Fluttertoast.showToast(msg: "Wrong OTP");
     }
+  }
+
+  void declineOrder(String orderid, BuildContext context) {
+    Firestore.instance.collection('allOrders').document(orderid).delete();
+    Navigator.of(context).pushReplacementNamed('/homescreen');
+  }
+
+  void acceptOrder(String orderid, PanelController controller) {
+    Firestore.instance.collection('allOrders').document(orderid).updateData({
+      "isStart": true,
+      "isPicked": false,
+    });
+    controller.open();
+  }
+
+  void pickUpDone(String orderid, OrderProvider provider) {
+    Firestore.instance.collection('allOrders').document(orderid).updateData({
+      "isPicked": true,
+    });
+    provider.setIsPicked(true);
   }
 }
