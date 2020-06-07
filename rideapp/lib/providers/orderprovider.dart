@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rideapp/controllers/static_utils.dart';
+import 'package:rideapp/enums/station_view.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 
 class OrderProvider with ChangeNotifier {
@@ -11,8 +12,12 @@ class OrderProvider with ChangeNotifier {
   int _groupOfRideType = 0;
   double _totalDistance;
   StaticUtils _utils = StaticUtils();
-  List<String> _trucksCategory = ["Mini", "Small", "Medium", "Big"];
+  List<String> _trucksCategory = ["Mini", "Small", "Medium", "Large"];
+  List<String> _trucksCategoryLocal = ["Mini", "Small", "Medium",];
   String _selectedTruck = "Mini";
+  String _selectedTruckLocal = "Mini";
+  StationView _stationView;
+  int _selectedLocalView = 0;
 
   OrderProvider() {
     _selectedPaymentMethod = 0;
@@ -21,6 +26,7 @@ class OrderProvider with ChangeNotifier {
     _receiverName = "";
     _receiverPhone = "";
     _truckName = "";
+    _stationView = StationView.LOCAL;
   }
 
   int get getSelectedPaymentMethod => _selectedPaymentMethod;
@@ -39,10 +45,28 @@ class OrderProvider with ChangeNotifier {
 
   String get getSelectedTruck => _selectedTruck;
 
+  String get getSelectedTruckLocal => _selectedTruckLocal;
+
   List<String> get getTruckCategory => _trucksCategory;
+
+  List<String> get getTruckCatLocal => _trucksCategoryLocal;
+
+  StationView get getStationView => _stationView;
+
+  int get getSelectedLocalView => _selectedLocalView;
 
   void setPaymentMethod(int id) {
     _selectedPaymentMethod = id;
+    notifyListeners();
+  }
+
+  void setLocalView(int val) {
+    _selectedLocalView = val;
+    notifyListeners();
+  }
+
+  void setStationView(StationView view) {
+    _stationView = view;
     notifyListeners();
   }
 
@@ -53,6 +77,11 @@ class OrderProvider with ChangeNotifier {
 
   void setTruckCategory(String cat) {
     _selectedTruck = cat;
+    notifyListeners();
+  }
+
+  void setTruckCategoryLocal(String cat) {
+    _selectedTruckLocal = cat;
     notifyListeners();
   }
 

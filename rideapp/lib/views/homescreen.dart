@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
 import 'package:rideapp/enums/locationview.dart';
+import 'package:rideapp/enums/station_view.dart';
 import 'package:rideapp/model/location_details.dart';
 import 'package:rideapp/model/location_result.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
@@ -212,7 +213,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               ListTile(
-                onTap: () => Navigator.pushNamed(context, '/profile', arguments: {
+                onTap: () =>
+                    Navigator.pushNamed(context, '/profile', arguments: {
                   "pref": userPreferences,
                 }),
                 leading:
@@ -287,6 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         isOutSideSelected = false;
                         zoomView = 18;
                       });
+                      orderProvider.setStationView(StationView.LOCAL);
                       _googleMapController.animateCamera(
                           CameraUpdate.newCameraPosition(CameraPosition(
                         target: initLatLng,
@@ -331,6 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         isOutSideSelected = true;
                         zoomView = 14;
                       });
+                      orderProvider.setStationView(StationView.OUTSIDE);
                       _googleMapController.animateCamera(
                           CameraUpdate.newCameraPosition(CameraPosition(
                         target: initLatLng,
@@ -550,10 +554,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: ThemeColors.primaryColor, fontSize: 16.0),
                         decoration: InputDecoration(
                             suffixIcon: IconButton(
-                                onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            DropLocationMap())),
+                                onPressed: () => Navigator.of(context)
+                                    .push(MaterialPageRoute(
+                                        builder: (context) => DropLocationMap(
+                                              dropController:
+                                                  _destinationController,
+                                            ))),
                                 icon: Icon(Icons.location_on)),
                             prefixIcon: IconButton(
                               icon: Icon(Icons.my_location),
@@ -610,6 +616,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                               detail.locationAddress;
                                           locationViewProvider
                                               .setPickUpLatLng(getLatLng);
+                                          locationViewProvider
+                                              .setPickUpAddress(mainAddress);
                                         } else {
                                           _destinationController.text =
                                               detail.locationAddress;

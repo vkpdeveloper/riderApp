@@ -7,6 +7,11 @@ import 'package:rideapp/providers/locationViewProvider.dart';
 
 class DropLocationMap extends StatelessWidget {
   GoogleMapController _googleMapController;
+  final TextEditingController dropController;
+
+  DropLocationMap({Key key, @required this.dropController}) : super(key: key);
+
+  String address;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +34,7 @@ class DropLocationMap extends StatelessWidget {
                 Coordinates(lastPos.latitude, lastPos.longitude);
             List<Address> allAddress =
                 await Geocoder.local.findAddressesFromCoordinates(coordinates);
-            String address = allAddress[0].addressLine;
+            address = allAddress[0].addressLine;
             locationViewProvider.setDestinationPointAddress(address);
           },
           initialCameraPosition: CameraPosition(
@@ -58,6 +63,7 @@ class DropLocationMap extends StatelessWidget {
           right: 30.0,
           child: MaterialButton(
             onPressed: () {
+              dropController.text = address;
               Navigator.of(context).pop();
             },
             height: 40.0,
