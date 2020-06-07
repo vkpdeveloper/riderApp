@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:driverapp/providers/auth_provider.dart';
 import 'package:driverapp/providers/order_provider.dart';
@@ -6,6 +8,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class FirebaseUtils {
@@ -146,12 +150,24 @@ class FirebaseUtils {
     Navigator.of(context).pushReplacementNamed('/homescreen');
   }
 
-  void acceptOrder(String orderid, PanelController controller) {
+  void acceptOrder(String orderid, PanelController controller, LatLng latLng,
+      Timer updateTimer, OrderProvider provider) {
     Firestore.instance.collection('allOrders').document(orderid).updateData({
       "isStart": true,
       "isPicked": false,
+      "riderPoint": {"latitude": latLng.latitude, "longitude": latLng.longitude}
     });
     controller.open();
+    updateTimer = Timer.periodic(
+        Duration(minutes: 2), (timer) => updateDriverLocation(orderid));
+  }
+
+  updateDriverLocation(String orderid) async {
+    Position latLng = await Geolocator().getCurrentPosition();
+    print(latLng.latitude);
+    Firestore.instance.collection('allOrders').document(orderid).updateData({
+      "riderPoint": {"latitude": latLng.latitude, "longitude": latLng.longitude}
+    });
   }
 
   void pickUpDone(String orderid, OrderProvider provider) {
@@ -159,5 +175,19 @@ class FirebaseUtils {
       "isPicked": true,
     });
     provider.setIsPicked(true);
+  }
+
+  void deliveryDone(String orderid, OrderProvider provider) async {
+    Firestore.instance.collection('allOrders').document(orderid).updateData({
+      "isPicked": true,
+      "isDelivered": true,
+      "isStart": true,
+      "isPending": false
+    });
+    String phoneNumber = await getuserphoneno();
+    Firestore.instance.collection('vendor').document(phoneNumber).updateData({
+      "isFree": true,
+    });
+    provider.setIsDropped(true);
   }
 }

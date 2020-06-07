@@ -10,6 +10,7 @@ class UserPreferences with ChangeNotifier {
   String _token;
   String _email;
   String _userID;
+  bool _isFree;
   FirebaseUtils _utils = FirebaseUtils();
 
   UserPreferences() {
@@ -18,6 +19,7 @@ class UserPreferences with ChangeNotifier {
     _token = "";
     _email = "";
     _userID = "";
+    _isFree = false;
   }
 
   void init() async {
@@ -34,6 +36,7 @@ class UserPreferences with ChangeNotifier {
       _email = userData.data['email'];
       _phoneNumber = userData.data['phone'];
       _token = userData.data['token'];
+      _isFree = userData.data['isFree'];
     }
     notifyListeners();
   }
@@ -43,4 +46,17 @@ class UserPreferences with ChangeNotifier {
   String get getUserPhone => _phoneNumber;
   String get getUserEmail => _email;
   String get getUserToken => _token;
+  bool get getIsFree => _isFree;
+
+  void setIsFree(bool val) async {
+    FirebaseUser _user = await _utils.getCurrentUser();
+    Firestore.instance
+        .collection('vendor')
+        .document(_user.phoneNumber)
+        .updateData({
+      "isFree": val,
+    });
+    _isFree = val;
+    notifyListeners();
+  }
 }
