@@ -143,7 +143,7 @@ class _TrackOrderState extends State<HomeScreen> {
       setState(() {
         dataOfPickUp = mapData;
         orderLoadingState = OrderLoadingState.IDLE;
-         if (isPicked == true) {
+        if (isPicked == true) {
           Timer.periodic(Duration(seconds: 2), (timer) => updatelocation());
         }
       });
@@ -381,7 +381,7 @@ class _TrackOrderState extends State<HomeScreen> {
                 ? Container()
                 : Padding(
                     padding:
-                        EdgeInsets.symmetric(horizontal: 15.0, vertical: 10),
+                        EdgeInsets.all(8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: <Widget>[
@@ -391,9 +391,8 @@ class _TrackOrderState extends State<HomeScreen> {
                               fontSize: 16.0, fontWeight: FontWeight.bold),
                         ),
                         Padding(
-                            padding: EdgeInsets.only(
-                                left:
-                                    MediaQuery.of(context).size.width / 2 - 30),
+                            padding: EdgeInsets.fromLTRB( 
+                                    MediaQuery.of(context).size.width / 2 - 40, 0, 10, 0),
                             child: RichText(
                               text: TextSpan(
                                   style: TextStyle(
@@ -410,6 +409,7 @@ class _TrackOrderState extends State<HomeScreen> {
                     )),
             minHeight: MediaQuery.of(context).size.height / 3 + 10,
             maxHeight: MediaQuery.of(context).size.height,
+            
             collapsed: Padding(
               padding: const EdgeInsets.only(top: 30.0),
               child: Column(
@@ -434,6 +434,15 @@ class _TrackOrderState extends State<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           FloatingActionButton.extended(
+                            label: Text("Decline", style: TextStyle(color: Colors.black),),
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.white,
+                            onPressed: () =>
+                                _firebaseUtils.declineOrder(orderid, context),
+                            heroTag: "decline",
+                            icon: Icon(Icons.close, color: Colors.black,),
+                          ),
+                          FloatingActionButton.extended(
                             label: Text("Accept"),
                             foregroundColor: Colors.white,
                             backgroundColor: ThemeColors.primaryColor,
@@ -445,15 +454,6 @@ class _TrackOrderState extends State<HomeScreen> {
                             heroTag: "accept",
                             icon: Icon(Icons.check),
                           ),
-                          FloatingActionButton.extended(
-                            label: Text("Decline"),
-                            foregroundColor: Colors.white,
-                            backgroundColor: ThemeColors.primaryColor,
-                            onPressed: () =>
-                                _firebaseUtils.declineOrder(orderid, context),
-                            heroTag: "decline",
-                            icon: Icon(Icons.close),
-                          )
                         ],
                       ),
                     )
