@@ -208,15 +208,16 @@ class OrderDetailsScreen extends StatelessWidget {
                       value: 1,
                     )
                   ],
-                  if (orderProvider.getSelectedLocalView == 0) ...[
+                  if (orderProvider.getSelectedLocalView == 0 &&
+                      orderProvider.getStationView == StationView.LOCAL) ...[
                     Form(
                       key: capacityFormKey,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15.0),
                         child: TextFormField(
                           validator: (val) {
-                            if (val.length != 10) {
-                              return "Invalid Phone Number";
+                            if (val.length != 6) {
+                              return "Invalid Weight";
                             }
                           },
                           onSaved: (val) {

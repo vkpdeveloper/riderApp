@@ -64,13 +64,10 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Text(
-              "Ride App",
-              style: GoogleFonts.josefinSans(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 25.0,
-                  color: Colors.white),
-            ),
+            Container(
+                width: 200,
+                height: 200,
+                child: Image.asset("asset/images/newlogo.png")),
             SizedBox(height: 50),
             isInternetFound
                 ? CircularProgressIndicator()

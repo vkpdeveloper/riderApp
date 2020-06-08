@@ -143,6 +143,9 @@ class _TrackOrderState extends State<HomeScreen> {
       setState(() {
         dataOfPickUp = mapData;
         orderLoadingState = OrderLoadingState.IDLE;
+         if (isPicked == true) {
+          Timer.periodic(Duration(seconds: 2), (timer) => updatelocation());
+        }
       });
       getRiderLocation();
     } else {
@@ -151,6 +154,13 @@ class _TrackOrderState extends State<HomeScreen> {
       });
       return;
     }
+  }
+
+  updatelocation() async {
+    Position pause = await Geolocator().getCurrentPosition();
+    Firestore.instance.collection('allOrders').document(orderid).updateData({
+      "riderPoint": {"latitude": pause.latitude, "longitude": pause.longitude}
+    });
   }
 
   getRiderLocation() async {
