@@ -14,6 +14,7 @@ import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
 import 'package:rideapp/enums/locationview.dart';
 import 'package:rideapp/enums/station_view.dart';
+import 'package:rideapp/enums/view_state.dart';
 import 'package:rideapp/model/location_details.dart';
 import 'package:rideapp/model/location_result.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
@@ -22,6 +23,7 @@ import 'package:rideapp/providers/user_provider.dart';
 import 'package:rideapp/services/firebase_auth_service.dart';
 import 'package:rideapp/utils/uuid.dart';
 import 'package:rideapp/views/drop_location_screen.dart';
+import 'package:rideapp/widgets/truck_cat_widget.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:http/http.dart' as http;
 
@@ -53,8 +55,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String sessionToken = Uuid().generateV4();
   List<LocationDetails> allLocations = [];
   Set<Polyline> _polyLines = {};
+  ViewState _viewState = ViewState.DEFAULT;
+  FocusNode _dropFocusNode = FocusNode();
 
   getCurrentLocation() async {
+    _pickUpController.text = "Fetching...";
     bool status = Geolocator().forceAndroidLocationManager;
     print(status);
     Geolocator()
@@ -64,8 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       Position pos = await Geolocator().getCurrentPosition();
-      print(pos.latitude);
-      print(pos.longitude);
+
       // List<Address> allAddresses = await Geocoder.local
       //     .findAddressesFromCoordinates(
       //         Coordinates(pos.latitude, pos.longitude));
@@ -182,495 +186,386 @@ class _HomeScreenState extends State<HomeScreen> {
     if (userPreferences.getUserName == "") {
       userPreferences.init();
     }
-    return Scaffold(
-        drawer: Drawer(
-          elevation: 8.0,
-          child: Column(
-            children: <Widget>[
-              UserAccountsDrawerHeader(
-                accountName: Text(userPreferences.getUserName),
-                accountEmail: Text(userPreferences.getUserPhone != ""
-                    ? userPreferences.getUserPhone
-                    : userPreferences.getUserEmail),
-              ),
-              ListTile(
-                onTap: () =>
-                    Navigator.pushNamed(context, '/savedaddressscreen'),
-                leading:
-                    Icon(Icons.location_city, color: ThemeColors.primaryColor),
-                title: Text(
-                  "Saved Address",
-                  style: TextStyle(color: ThemeColors.primaryColor),
+    return WillPopScope(
+      onWillPop: () async {
+        if (isPanelOpenComplete) {
+          _controller.close();
+        } else {
+          return true;
+        }
+      },
+      child: Scaffold(
+          drawer: Drawer(
+            elevation: 8.0,
+            child: Column(
+              children: <Widget>[
+                UserAccountsDrawerHeader(
+                  accountName: Text(userPreferences.getUserName),
+                  accountEmail: Text(userPreferences.getUserPhone != ""
+                      ? userPreferences.getUserPhone
+                      : userPreferences.getUserEmail),
                 ),
-              ),
-              ListTile(
-                onTap: () => Navigator.pushNamed(context, '/walletscreen'),
-                leading: Icon(Icons.account_balance_wallet,
-                    color: ThemeColors.primaryColor),
-                title: Text(
-                  "Wallet",
-                  style: TextStyle(color: ThemeColors.primaryColor),
-                ),
-              ),
-              ListTile(
-                onTap: () =>
-                    Navigator.pushNamed(context, '/profile', arguments: {
-                  "pref": userPreferences,
-                }),
-                leading:
-                    Icon(Icons.person_outline, color: ThemeColors.primaryColor),
-                title: Text(
-                  "Update Profile",
-                  style: TextStyle(color: ThemeColors.primaryColor),
-                ),
-              ),
-              ListTile(
-                onTap: () => Navigator.pushNamed(context, '/allordersscreen'),
-                leading:
-                    Icon(Icons.event_note, color: ThemeColors.primaryColor),
-                title: Text(
-                  "All Bookings",
-                  style: TextStyle(color: ThemeColors.primaryColor),
-                ),
-              ),
-              ListTile(
-                leading: Icon(Feather.info, color: ThemeColors.primaryColor),
-                title: GestureDetector(
-                  onTap: () {},
-                  child: Text(
-                    "About",
+                ListTile(
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/savedaddressscreen'),
+                  leading: Icon(Icons.location_city,
+                      color: ThemeColors.primaryColor),
+                  title: Text(
+                    "Saved Address",
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
-              ),
-              ListTile(
-                leading: Icon(AntDesign.customerservice,
-                    color: ThemeColors.primaryColor),
-                title: GestureDetector(
-                  onTap: () {},
-                  child: Text(
-                    "Support",
+                ListTile(
+                  onTap: () => Navigator.pushNamed(context, '/walletscreen'),
+                  leading: Icon(Icons.account_balance_wallet,
+                      color: ThemeColors.primaryColor),
+                  title: Text(
+                    "Wallet",
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
-              ),
-              ListTile(
-                leading:
-                    Icon(Icons.exit_to_app, color: ThemeColors.primaryColor),
-                title: GestureDetector(
-                  onTap: () {
-                    _auth.signOut();
-                    Navigator.pushReplacementNamed(context, '/loginscreen');
-                  },
-                  child: Text(
-                    "Logout",
+                ListTile(
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/profile', arguments: {
+                    "pref": userPreferences,
+                  }),
+                  leading: Icon(Icons.person_outline,
+                      color: ThemeColors.primaryColor),
+                  title: Text(
+                    "Update Profile",
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        key: _scaffoldKey,
-        body: SlidingUpPanel(
-          color: Colors.white,
-          controller: _controller,
-          parallaxEnabled: true,
-          isDraggable: true,
-          collapsed: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isLocalSelected = true;
-                        isOutSideSelected = false;
-                        zoomView = 18;
-                      });
-                      orderProvider.setStationView(StationView.LOCAL);
-                      _googleMapController.animateCamera(
-                          CameraUpdate.newCameraPosition(CameraPosition(
-                        target: initLatLng,
-                        zoom: zoomView,
-                      )));
-                    },
-                    child: Container(
-                      height: 90,
-                      padding: const EdgeInsets.all(5.0),
-                      width: (MediaQuery.of(context).size.width / 2) - 20,
-                      margin: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                          border: isLocalSelected
-                              ? Border.all(
-                                  color: ThemeColors.primaryColor, width: 4.0)
-                              : null,
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10.0),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.grey.shade100, blurRadius: 10)
-                          ]),
-                      child: Column(
-                        children: <Widget>[
-                          Image.asset(
-                            "asset/images/map.png",
-                            height: 40,
-                            width: 40,
-                          ),
-                          Text(
-                            "Local",
-                            style: TextStyle(fontSize: 15.0),
-                          )
-                        ],
-                      ),
+                ListTile(
+                  onTap: () => Navigator.pushNamed(context, '/allordersscreen'),
+                  leading:
+                      Icon(Icons.event_note, color: ThemeColors.primaryColor),
+                  title: Text(
+                    "All Bookings",
+                    style: TextStyle(color: ThemeColors.primaryColor),
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(Feather.info, color: ThemeColors.primaryColor),
+                  title: GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      "About",
+                      style: TextStyle(color: ThemeColors.primaryColor),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isLocalSelected = false;
-                        isOutSideSelected = true;
-                        zoomView = 14;
-                      });
-                      orderProvider.setStationView(StationView.OUTSIDE);
-                      _googleMapController.animateCamera(
-                          CameraUpdate.newCameraPosition(CameraPosition(
-                        target: initLatLng,
-                        zoom: zoomView,
-                      )));
-                    },
-                    child: Container(
-                      height: 90,
-                      width: (MediaQuery.of(context).size.width / 2) - 20,
-                      margin: const EdgeInsets.all(8.0),
-                      padding: const EdgeInsets.all(5.0),
-                      decoration: BoxDecoration(
-                          border: isOutSideSelected
-                              ? Border.all(
-                                  color: ThemeColors.primaryColor, width: 4.0)
-                              : null,
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10.0),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.grey.shade100, blurRadius: 10)
-                          ]),
-                      child: Column(
-                        children: <Widget>[
-                          Image.asset(
-                            "asset/images/location.png",
-                            height: 40,
-                            width: 40,
-                          ),
-                          Text(
-                            "Outside Station",
-                            style: TextStyle(fontSize: 14.0),
-                          )
-                        ],
-                      ),
+                ),
+                ListTile(
+                  leading: Icon(AntDesign.customerservice,
+                      color: ThemeColors.primaryColor),
+                  title: GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      "Support",
+                      style: TextStyle(color: ThemeColors.primaryColor),
                     ),
-                  )
-                ],
-              ),
-              SizedBox(height: 10.0),
-              Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 10.0),
-                  height: 40.0,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 8.0, horizontal: 10.0),
-                  alignment: Alignment.topLeft,
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(blurRadius: 14.0, color: Colors.grey.shade100)
-                    ],
-                    color: ThemeColors.primaryColor,
-                    borderRadius: BorderRadius.circular(10.0),
                   ),
-                  child: Text(
-                    "Recents",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
-                        color: Colors.white),
-                  )),
-              Container(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height / 5,
-                child: StreamBuilder(
-                  stream: Firestore.instance
-                      .collection('user')
-                      .document(userPreferences.getUserID)
-                      .collection('address')
-                      .limit(2)
-                      .snapshots(),
-                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting)
-                      return Center(
-                          child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            ThemeColors.primaryColor),
-                      ));
-                    if (snapshot.data.documents.length == 0) {
-                      return Center(child: Text("No recent locations"));
-                    } else {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: ListView(
-                          shrinkWrap: true,
-                          children: snapshot.data.documents
-                              .map((DocumentSnapshot data) {
-                            return ListTile(
-                              onTap: () {
-                                LatLng latLng = LatLng(data.data['latlng'][0],
-                                    data.data['latlng'][1]);
-                                _destinationController.text =
-                                    data.data['address'];
-                                locationViewProvider
-                                    .setDestinationLatLng(latLng);
-                                locationViewProvider.setDestinationPointAddress(
-                                    data.data['address']);
-                                _googleMapController.animateCamera(
-                                    CameraUpdate.newCameraPosition(
-                                        CameraPosition(
-                                            target: latLng, zoom: zoomView)));
-                              },
-                              leading: Icon(Icons.watch_later),
-                              title: Text(
-                                data.data['address'],
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      );
-                    }
-                  },
                 ),
-              )
-            ],
+                ListTile(
+                  leading:
+                      Icon(Icons.exit_to_app, color: ThemeColors.primaryColor),
+                  title: GestureDetector(
+                    onTap: () {
+                      _auth.signOut();
+                      Navigator.pushReplacementNamed(context, '/loginscreen');
+                    },
+                    child: Text(
+                      "Logout",
+                      style: TextStyle(color: ThemeColors.primaryColor),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          onPanelClosed: () {
-            _pickFocusNode.unfocus();
-            setState(() {
-              isPanelOpenComplete = false;
-            });
-          },
-          onPanelOpened: () {
-            setState(() {
-              isPanelOpenComplete = true;
-              _pickUpController.text = mainAddress;
-            });
-          },
-          defaultPanelState: PanelState.CLOSED,
-          boxShadow: [BoxShadow(blurRadius: 10.0, color: Colors.grey.shade100)],
-          maxHeight: MediaQuery.of(context).size.height,
-          minHeight: (MediaQuery.of(context).size.height / 2) - 80,
-          footer: !isPanelOpenComplete
-              ? Container()
-              : Padding(
-                  padding: EdgeInsets.only(
-                      left: MediaQuery.of(context).size.width - 60,
-                      bottom: 10,
-                      right: 20.0),
-                  child: Container(
-                      alignment: Alignment.bottomRight,
-                      child: FloatingActionButton(
-                        heroTag: "forward_order",
-                        onPressed: () {
-                          orderProvider.setOrderPrice(locationViewProvider);
-                          Navigator.pushNamed(context, '/orderdetailsscreen');
-                        },
-                        foregroundColor: Colors.white,
-                        backgroundColor: ThemeColors.primaryColor,
-                        child: Icon(Icons.arrow_forward_ios),
-                      )),
-                ),
-          panel: !isPanelOpenComplete
-              ? Container()
-              : Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
-                  child: Column(
-                    children: <Widget>[
-                      Align(
-                          alignment: Alignment.topLeft,
-                          child: Row(
-                            children: <Widget>[
-                              Icon(Octicons.primitive_dot, color: Colors.green),
-                              Text(
-                                  _pickFocusNode.hasFocus == true
-                                      ? "Pick Up Location"
-                                      : "Drop Location",
-                                  style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: ThemeColors.primaryColor,
-                                      fontWeight: FontWeight.bold))
-                            ],
-                          )),
-                      SizedBox(height: 20),
-                      TextField(
-                        onChanged: (val) {
-                          locationViewProvider.setPickUpAddress(val);
-                        },
-                        onTap: () {
-                          locationViewProvider
-                              .setLocationView(LocationView.PICKUPSELECTED);
-                        },
-                        controller: _pickUpController,
-                        focusNode: _pickFocusNode,
-                        style: TextStyle(
-                            color: ThemeColors.primaryColor, fontSize: 16.0),
-                        autofocus: true,
-                        decoration: InputDecoration(
-                            prefixIcon: IconButton(
-                              icon: Icon(Icons.my_location),
-                              onPressed: () =>
-                                  _scaffoldKey.currentState.openDrawer(),
-                              color: ThemeColors.primaryColor,
-                            ),
-                            hintText: "Your Pickup Location",
-                            border: OutlineInputBorder(
-                              borderSide:
-                                  BorderSide(color: ThemeColors.primaryColor),
-                              borderRadius: BorderRadius.circular(10),
+          key: _scaffoldKey,
+          body: SlidingUpPanel(
+            color: Colors.white,
+            controller: _controller,
+            parallaxEnabled: true,
+            isDraggable: true,
+            collapsed: _renderCollapsed(orderProvider, locationViewProvider),
+            onPanelClosed: () {
+              _pickFocusNode.unfocus();
+              setState(() {
+                isPanelOpenComplete = false;
+              });
+            },
+            onPanelOpened: () {
+              setState(() {
+                isPanelOpenComplete = true;
+                _pickUpController.text = mainAddress;
+              });
+              if (locationViewProvider.getLocationView ==
+                  LocationView.PICKUPSELECTED) {
+                _pickFocusNode.requestFocus();
+              } else {
+                _dropFocusNode.requestFocus();
+              }
+            },
+            defaultPanelState: PanelState.CLOSED,
+            boxShadow: [
+              BoxShadow(blurRadius: 10.0, color: Colors.grey.shade100)
+            ],
+            maxHeight: MediaQuery.of(context).size.height,
+            minHeight: (MediaQuery.of(context).size.height / 2) - 80,
+            panel: !isPanelOpenComplete
+                ? Container()
+                : Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 50, horizontal: 20),
+                    child: Column(
+                      children: <Widget>[
+                        Align(
+                            alignment: Alignment.topLeft,
+                            child: Row(
+                              children: <Widget>[
+                                Icon(Octicons.primitive_dot,
+                                    color: ThemeColors.primaryColor),
+                                Text(
+                                    _pickFocusNode.hasFocus == true
+                                        ? "Pick Up Location"
+                                        : "Drop Location",
+                                    style: TextStyle(
+                                        fontSize: 16.0,
+                                        color: ThemeColors.primaryColor,
+                                        fontWeight: FontWeight.bold))
+                              ],
                             )),
-                      ),
-                      SizedBox(
-                        height: 15.0,
-                      ),
-                      TextField(
-                        onChanged: (val) {
-                          locationViewProvider.setDestinationPointAddress(val);
-                        },
-                        onTap: () {
-                          locationViewProvider.setLocationView(
-                              LocationView.DESTINATIONSELECTED);
-                        },
-                        controller: _destinationController,
-                        style: TextStyle(
-                            color: ThemeColors.primaryColor, fontSize: 16.0),
-                        decoration: InputDecoration(
-                            suffixIcon: IconButton(
-                                onPressed: () => Navigator.of(context)
-                                    .push(MaterialPageRoute(
-                                        builder: (context) => DropLocationMap(
-                                              dropController:
-                                                  _destinationController,
-                                            ))),
-                                icon: Icon(Icons.location_on)),
-                            prefixIcon: IconButton(
-                              icon: Icon(Icons.my_location),
-                              onPressed: () =>
-                                  _scaffoldKey.currentState.openDrawer(),
-                              color: ThemeColors.primaryColor,
-                            ),
-                            hintText: "Your Drop Location",
-                            border: OutlineInputBorder(
-                              borderSide:
-                                  BorderSide(color: ThemeColors.primaryColor),
-                              borderRadius: BorderRadius.circular(10),
-                            )),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Divider(
-                        color: ThemeColors.primaryColor,
-                        height: 8.0,
-                      ),
-                      Expanded(
-                        child: ListView(
-                          shrinkWrap: true,
-                          scrollDirection: Axis.vertical,
-                          children: <Widget>[
-                            if (isSearchingCurrently)
-                              _isSearchingOrNotFound(searchVal),
-                            if (!isSearchingCurrently)
-                              for (LocationDetails detail in allLocations) ...[
-                                Container(
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Colors.grey.shade100,
-                                            blurRadius: 14.0)
-                                      ]),
-                                  child: ListTile(
-                                    onTap: () async {
-                                      _controller.close();
-                                      LatLng getLatLng =
-                                          await decodeAndSelectPlace(
-                                              detail.locationID);
-                                      if (getLatLng != null) {
-                                        mainAddress = detail.locationAddress;
-                                        moveCamera(getLatLng);
-                                        locationViewProvider
-                                            .setAddress(detail.locationAddress);
-                                        if (locationViewProvider
-                                                .getLocationView ==
-                                            LocationView.PICKUPSELECTED) {
-                                          _pickUpController.text =
-                                              detail.locationAddress;
-                                          locationViewProvider
-                                              .setPickUpLatLng(getLatLng);
-                                          locationViewProvider
-                                              .setPickUpAddress(mainAddress);
-                                        } else {
-                                          _destinationController.text =
-                                              detail.locationAddress;
-                                          locationViewProvider
-                                              .setDestinationLatLng(getLatLng);
-                                          locationViewProvider
-                                              .setDestinationPointAddress(
-                                                  detail.locationAddress);
-                                        }
-                                      } else {
-                                        print(getLatLng);
-                                      }
+                        SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  TextField(
+                                    onChanged: (val) {
+                                      locationViewProvider
+                                          .setPickUpAddress(val);
                                     },
-                                    title: Text(detail.locationAddress),
+                                    onTap: () {
+                                      locationViewProvider.setLocationView(
+                                          LocationView.PICKUPSELECTED);
+                                    },
+                                    controller: _pickUpController,
+                                    focusNode: _pickFocusNode,
+                                    style: TextStyle(
+                                        color: ThemeColors.primaryColor,
+                                        fontSize: 16.0),
+                                    autofocus: true,
+                                    decoration: InputDecoration(
+                                        icon: Icon(Octicons.primitive_dot,
+                                            color: Colors.black38),
+                                        hintText: "Your Pickup Location",
+                                        border: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: ThemeColors.primaryColor),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        )),
                                   ),
-                                ),
-                                Divider()
-                              ]
+                                  SizedBox(height: 10.0),
+                                  TextField(
+                                    focusNode: _dropFocusNode,
+                                    onChanged: (val) {
+                                      locationViewProvider
+                                          .setDestinationPointAddress(val);
+                                    },
+                                    onTap: () {
+                                      locationViewProvider.setLocationView(
+                                          LocationView.DESTINATIONSELECTED);
+                                    },
+                                    controller: _destinationController,
+                                    style: TextStyle(
+                                        color: ThemeColors.primaryColor,
+                                        fontSize: 16.0),
+                                    decoration: InputDecoration(
+                                        icon: Icon(Octicons.check,
+                                            color: Colors.green),
+                                        hintText: "Your Drop Location",
+                                        border: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: ThemeColors.primaryColor),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        )),
+                                  ),
+                                ],
+                              ),
+                            )
                           ],
                         ),
-                      )
+                        SizedBox(
+                          height: 10,
+                        ),
+                        ListTile(
+                          contentPadding: const EdgeInsets.all(0),
+                          leading: CircleAvatar(
+                            backgroundColor: ThemeColors.primaryColor,
+                            child: Icon(
+                              Icons.home,
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: Text("Add Home Address"),
+                        ),
+                        ListTile(
+                          contentPadding: const EdgeInsets.all(0),
+                          leading: CircleAvatar(
+                            backgroundColor: ThemeColors.primaryColor,
+                            child: Icon(
+                              Icons.work,
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: Text("Add Office Address"),
+                        ),
+                        ListTile(
+                          contentPadding: const EdgeInsets.all(0),
+                          leading: CircleAvatar(
+                            backgroundColor: ThemeColors.primaryColor,
+                            child: Icon(
+                              Icons.star,
+                              color: Colors.white,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            onPressed: () {},
+                            icon: Icon(Icons.arrow_forward_ios,
+                                color: Colors.black),
+                          ),
+                          title: Text("Saved Places"),
+                        ),
+                        ListTile(
+                          onTap: () {
+                            if (locationViewProvider.getLocationView ==
+                                LocationView.PICKUPSELECTED) {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => DropLocationMap(
+                                        dropController: _pickUpController,
+                                        initLatLng: initLatLng,
+                                      )));
+                            } else {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => DropLocationMap(
+                                        dropController: _destinationController,
+                                        initLatLng: initLatLng,
+                                      )));
+                            }
+                          },
+                          contentPadding: const EdgeInsets.all(0),
+                          leading: CircleAvatar(
+                            backgroundColor: ThemeColors.primaryColor,
+                            child: Icon(
+                              Icons.map,
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: Text("Pick From Map"),
+                        ),
+                        Divider(
+                          color: ThemeColors.primaryColor,
+                          height: 8.0,
+                        ),
+                        Expanded(
+                          child: ListView(
+                            shrinkWrap: true,
+                            scrollDirection: Axis.vertical,
+                            children: <Widget>[
+                              if (isSearchingCurrently)
+                                _isSearchingOrNotFound(searchVal),
+                              if (!isSearchingCurrently)
+                                for (LocationDetails detail
+                                    in allLocations) ...[
+                                  Container(
+                                    decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                              color: Colors.grey.shade100,
+                                              blurRadius: 14.0)
+                                        ]),
+                                    child: ListTile(
+                                      onTap: () async {
+                                        _controller.close();
+                                        LatLng getLatLng =
+                                            await decodeAndSelectPlace(
+                                                detail.locationID);
+                                        if (getLatLng != null) {
+                                          mainAddress = detail.locationAddress;
+                                          moveCamera(getLatLng);
+                                          locationViewProvider.setAddress(
+                                              detail.locationAddress);
+                                          if (locationViewProvider
+                                                  .getLocationView ==
+                                              LocationView.PICKUPSELECTED) {
+                                            _pickUpController.text =
+                                                detail.locationAddress;
+                                            locationViewProvider
+                                                .setPickUpLatLng(getLatLng);
+                                            locationViewProvider
+                                                .setPickUpAddress(mainAddress);
+                                          } else {
+                                            _destinationController.text =
+                                                detail.locationAddress;
+                                            locationViewProvider
+                                                .setDestinationLatLng(
+                                                    getLatLng);
+                                            locationViewProvider
+                                                .setDestinationPointAddress(
+                                                    detail.locationAddress);
+                                          }
+                                        } else {
+                                          print(getLatLng);
+                                        }
+                                      },
+                                      title: Text(detail.locationAddress),
+                                    ),
+                                  ),
+                                  Divider()
+                                ]
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+            body: initLatLng == null
+                ? Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          ThemeColors.primaryColor),
+                    ),
+                  )
+                : Stack(
+                    children: <Widget>[
+                      GoogleMap(
+                        buildingsEnabled: true,
+                        polylines: _polyLines,
+                        mapType: MapType.normal,
+                        initialCameraPosition: CameraPosition(
+                          zoom: zoomView,
+                          target: initLatLng,
+                        ),
+                        onMapCreated: (controller) {
+                          _googleMapController = controller;
+                          locationViewProvider.setPickUpLatLng(initLatLng);
+                          locationViewProvider.setPickUpAddress(mainAddress);
+                        },
+                      ),
+                      _buildMenu(),
+                      _buildMyLocation(),
+                      pin(),
+                      _buildNotification(),
                     ],
                   ),
-                ),
-          body: initLatLng == null
-              ? Center(
-                  child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(ThemeColors.primaryColor),
-                  ),
-                )
-              : Stack(
-                  children: <Widget>[
-                    GoogleMap(
-                      buildingsEnabled: true,
-                      polylines: _polyLines,
-                      mapType: MapType.normal,
-                      initialCameraPosition: CameraPosition(
-                        zoom: zoomView,
-                        target: initLatLng,
-                      ),
-                      onMapCreated: (controller) {
-                        _googleMapController = controller;
-                        locationViewProvider.setPickUpLatLng(initLatLng);
-                        locationViewProvider.setPickUpAddress(mainAddress);
-                      },
-                    ),
-                    _buildSearch(context),
-                    _buildMyLocation(),
-                    pin(),
-                  ],
-                ),
-        ));
+          )),
+    );
   }
 
   Widget _buildMyLocation() {
@@ -678,6 +573,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottom: (MediaQuery.of(context).size.height / 2 - 70),
       right: 10.0,
       child: FloatingActionButton(
+        heroTag: "my_location_btn_home",
         onPressed: () => _googleMapController.animateCamera(
             CameraUpdate.newCameraPosition(CameraPosition(
                 target: initLatLng, zoom: 18, bearing: 180, tilt: 60))),
@@ -688,51 +584,65 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSearch(BuildContext context) {
+  // Widget _buildSearch(BuildContext context) {
+  //   return Positioned(
+  //     top: 40,
+  //     left: 20,
+  //     right: 20,
+  //     height: 60,
+  //     child: Container(
+  //       width: MediaQuery.of(context).size.width,
+  //       height: 60.0,
+  //       decoration: BoxDecoration(
+  //           borderRadius: BorderRadius.circular(10.0),
+  //           color: Colors.white,
+  //           boxShadow: [
+  //             BoxShadow(color: Colors.grey.shade100, blurRadius: 14.0)
+  //           ]),
+  //       child: Row(
+  //         crossAxisAlignment: CrossAxisAlignment.center,
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: <Widget>[
+  //           IconButton(
+  //             icon: Icon(Icons.menu),
+  //             onPressed: () => _scaffoldKey.currentState.openDrawer(),
+  //             color: ThemeColors.primaryColor,
+  //           ),
+  //           Expanded(
+  //             child: TextField(
+  //               focusNode: _mainFocusNode,
+  //               onTap: () {
+  //                 _mainFocusNode.unfocus();
+  //                 _pickFocusNode.requestFocus();
+  //                 _controller.open();
+  //               },
+  //               style:
+  //                   TextStyle(color: ThemeColors.primaryColor, fontSize: 16.0),
+  //               decoration: InputDecoration(
+  //                   filled: true,
+  //                   fillColor: Colors.white,
+  //                   hintText: "Your Current Location",
+  //                   border: OutlineInputBorder(
+  //                       borderRadius: BorderRadius.circular(10),
+  //                       borderSide: BorderSide.none)),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  Widget _buildMenu() {
     return Positioned(
-      top: 40,
-      left: 20,
-      right: 20,
-      height: 60,
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        height: 60.0,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10.0),
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(color: Colors.grey.shade100, blurRadius: 14.0)
-            ]),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            IconButton(
-              icon: Icon(Icons.menu),
-              onPressed: () => _scaffoldKey.currentState.openDrawer(),
-              color: ThemeColors.primaryColor,
-            ),
-            Expanded(
-              child: TextField(
-                focusNode: _mainFocusNode,
-                onTap: () {
-                  _mainFocusNode.unfocus();
-                  _pickFocusNode.requestFocus();
-                  _controller.open();
-                },
-                style:
-                    TextStyle(color: ThemeColors.primaryColor, fontSize: 16.0),
-                decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: "Your Current Location",
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none)),
-              ),
-            ),
-          ],
-        ),
+      top: 35.0,
+      left: 10.0,
+      child: FloatingActionButton(
+        heroTag: "home_menu",
+        onPressed: () => _scaffoldKey.currentState.openDrawer(),
+        child: Icon(Icons.menu),
+        backgroundColor: ThemeColors.primaryColor,
+        foregroundColor: Colors.white,
       ),
     );
   }
@@ -744,7 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Image.asset(
-              'asset/marker.png',
+              'asset/images/marker-0.png',
               height: 45,
               width: 45,
             ),
@@ -771,9 +681,606 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildNotification() {
+    return Positioned(
+      top: 35,
+      right: 10.0,
+      child: Row(
+        children: [
+          FloatingActionButton(
+            heroTag: "notification_home",
+            onPressed: () => _scaffoldKey.currentState.openDrawer(),
+            child: Icon(MaterialIcons.notifications),
+            backgroundColor: ThemeColors.primaryColor,
+            foregroundColor: Colors.white,
+          ),
+          SizedBox(
+            width: 10.0,
+          ),
+          FloatingActionButton(
+            heroTag: "home_sch",
+            onPressed: () {},
+            child: Icon(Icons.watch_later),
+            backgroundColor: ThemeColors.primaryColor,
+            foregroundColor: Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _isSearchingOrNotFound(String result) {
     return ListTile(
       title: Text(result),
     );
+  }
+
+  Widget _renderCollapsed(
+      OrderProvider orderProvider, LocationViewProvider locationViewProvider) {
+    if (_viewState == ViewState.DEFAULT) {
+      return SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          isLocalSelected = true;
+
+                          isOutSideSelected = false;
+
+                          zoomView = 18;
+                        });
+
+                        orderProvider.setStationView(StationView.LOCAL);
+
+                        _googleMapController.animateCamera(
+                            CameraUpdate.newCameraPosition(CameraPosition(
+                          target: initLatLng,
+                          zoom: zoomView,
+                        )));
+                      },
+                      child: Container(
+                        height: 70,
+                        padding: const EdgeInsets.all(5.0),
+                        width: (MediaQuery.of(context).size.width / 2) - 20,
+                        margin: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                            border: isLocalSelected
+                                ? Border.all(
+                                    color: ThemeColors.primaryColor, width: 4.0)
+                                : null,
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10.0),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.grey.shade100, blurRadius: 10)
+                            ]),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Image.asset(
+                              "asset/images/map.png",
+                              height: 40,
+                              width: 40,
+                            ),
+                            SizedBox(
+                              width: 10.0,
+                            ),
+                            Text(
+                              "Local",
+                              style: TextStyle(fontSize: 15.0),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          isLocalSelected = false;
+
+                          isOutSideSelected = true;
+
+                          zoomView = 14;
+                        });
+
+                        orderProvider.setStationView(StationView.OUTSIDE);
+
+                        _googleMapController.animateCamera(
+                            CameraUpdate.newCameraPosition(CameraPosition(
+                          target: initLatLng,
+                          zoom: zoomView,
+                        )));
+                      },
+                      child: Container(
+                        height: 70,
+                        width: (MediaQuery.of(context).size.width / 2) - 20,
+                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(5.0),
+                        decoration: BoxDecoration(
+                            border: isOutSideSelected
+                                ? Border.all(
+                                    color: ThemeColors.primaryColor, width: 4.0)
+                                : null,
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10.0),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.grey.shade100, blurRadius: 10)
+                            ]),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Image.asset(
+                              "asset/images/location.png",
+                              height: 40,
+                              width: 40,
+                            ),
+                            SizedBox(
+                              width: 10.0,
+                            ),
+                            Text(
+                              "Outside Station",
+                              style: TextStyle(fontSize: 14.0),
+                            )
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                SizedBox(height: 10.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(children: <Widget>[
+                    TextField(
+                      onChanged: (val) {
+                        locationViewProvider.setPickUpAddress(val);
+                      },
+                      onTap: () {
+                        locationViewProvider
+                            .setLocationView(LocationView.PICKUPSELECTED);
+
+                        _controller.open();
+                      },
+                      controller: _pickUpController,
+                      focusNode: _pickFocusNode,
+                      style: TextStyle(color: Colors.black, fontSize: 16.0),
+                      readOnly: true,
+                      decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 2.0, horizontal: 8.0),
+                          prefixIcon: IconButton(
+                            icon: Icon(Icons.my_location),
+                            onPressed: () =>
+                                _scaffoldKey.currentState.openDrawer(),
+                            color: ThemeColors.primaryColor,
+                          ),
+                          hintText: "Your Pickup Location",
+                          border: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(color: ThemeColors.primaryColor),
+                            borderRadius: BorderRadius.circular(10),
+                          )),
+                    ),
+                    SizedBox(
+                      height: 15.0,
+                    ),
+                    TextField(
+                      onChanged: (val) {
+                        locationViewProvider.setDestinationPointAddress(val);
+                      },
+                      onTap: () {
+                        locationViewProvider
+                            .setLocationView(LocationView.DESTINATIONSELECTED);
+
+                        _controller.open();
+                      },
+                      controller: _destinationController,
+                      style: TextStyle(color: Colors.black, fontSize: 16.0),
+                      readOnly: true,
+                      decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 2.0, horizontal: 8.0),
+                          prefixIcon: IconButton(
+                            icon: Icon(Icons.my_location),
+                            onPressed: () =>
+                                _scaffoldKey.currentState.openDrawer(),
+                            color: ThemeColors.primaryColor,
+                          ),
+                          hintText: "Your Drop Location",
+                          border: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(color: ThemeColors.primaryColor),
+                            borderRadius: BorderRadius.circular(10),
+                          )),
+                    ),
+                  ]),
+                ),
+              ],
+            ),
+            Positioned(
+              bottom: 10,
+              right: 8.0,
+              child: FloatingActionButton(
+                heroTag: "go_ahead_default",
+                onPressed: () {
+                  if (orderProvider.getStationView == StationView.LOCAL)
+                    setState(() => _viewState = ViewState.LOCALSTATION);
+                  else
+                    setState(() => _viewState = ViewState.OUTSIDESTATION);
+                },
+                child: Icon(Icons.arrow_forward_ios),
+              ),
+            )
+          ],
+        ),
+      );
+    } else if (_viewState == ViewState.LOCALSTATION) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          primary: true,
+          child: Stack(
+            children: [
+              Container(
+                height: (MediaQuery.of(context).size.height / 2) - 80,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 10.0),
+                      child: Column(children: <Widget>[
+                        TextField(
+                            controller: _pickUpController,
+                            focusNode: _pickFocusNode,
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16.0),
+                            readOnly: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.all(5),
+                                icon: Icon(Octicons.primitive_dot,
+                                    color: Colors.black38),
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none))),
+                        SizedBox(
+                          height: 15.0,
+                        ),
+                        TextField(
+                            controller: _destinationController,
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16.0),
+                            readOnly: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.all(5),
+                                icon: Icon(
+                                  Octicons.check,
+                                  color: ThemeColors.primaryColor,
+                                ),
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none))),
+                        SizedBox(height: 10.0),
+                        TextField(
+                          style: TextStyle(color: Colors.black, fontSize: 16.0),
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 2.0, horizontal: 8.0),
+                              hintText: "Package weight (In KG)",
+                              border: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: ThemeColors.primaryColor),
+                                borderRadius: BorderRadius.circular(10),
+                              )),
+                        ),
+                        SizedBox(
+                          height: 10.0,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TruckCategory(
+                              onTap: () {
+                                print('CLICKED');
+                              },
+                              elevation: 30.0,
+                              btnContext: context,
+                              backgroundColor: ThemeColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              text: Text("Mini"),
+                              borderColor: Colors.transparent,
+                            ),
+                            TruckCategory(
+                              onTap: () {},
+                              btnContext: context,
+                              backgroundColor: ThemeColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              text: Text("Small"),
+                              borderColor: Colors.transparent,
+                            )
+                          ],
+                        ),
+                        TruckCategory(
+                          onTap: () {},
+                          btnContext: context,
+                          backgroundColor: ThemeColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          text: Text("Medium"),
+                          borderColor: Colors.transparent,
+                        )
+                      ]),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                bottom: 10.0,
+                left: 8.0,
+                child: FloatingActionButton(
+                  heroTag: "go_back_default",
+                  onPressed: () =>
+                      setState(() => _viewState = ViewState.DEFAULT),
+                  child: Icon(Icons.arrow_back_ios),
+                ),
+              ),
+              Positioned(
+                bottom: 10.0,
+                right: 8.0,
+                child: FloatingActionButton(
+                  heroTag: "go_ahead_truck",
+                  onPressed: () =>
+                      setState(() => _viewState = ViewState.TRUCKVIEW),
+                  child: Icon(Icons.arrow_forward_ios),
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    } else if (_viewState == ViewState.OUTSIDESTATION) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          primary: true,
+          child: Stack(
+            children: [
+              Container(
+                height: (MediaQuery.of(context).size.height / 2) - 80,
+                child: Column(children: [
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0, vertical: 10.0),
+                      child: Column(children: <Widget>[
+                        TextField(
+                            controller: _pickUpController,
+                            focusNode: _pickFocusNode,
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16.0),
+                            readOnly: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.all(5),
+                                icon: Icon(Octicons.primitive_dot,
+                                    color: Colors.black38),
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none))),
+                        SizedBox(
+                          height: 15.0,
+                        ),
+                        TextField(
+                            controller: _destinationController,
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16.0),
+                            readOnly: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.all(5),
+                                icon: Icon(
+                                  Octicons.check,
+                                  color: ThemeColors.primaryColor,
+                                ),
+                                border: OutlineInputBorder(
+                                    borderSide: BorderSide.none))),
+                        SizedBox(
+                          height: 5.0,
+                        ),
+                        TextField(
+                          style: TextStyle(color: Colors.black, fontSize: 16.0),
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                              hintText: "Your Estimated Price",
+                              border: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: ThemeColors.primaryColor),
+                                borderRadius: BorderRadius.circular(10),
+                              )),
+                        ),
+                        SizedBox(
+                          height: 5.0,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TruckCategory(
+                              onTap: () {
+                                print('CLICKED');
+                              },
+                              elevation: 30.0,
+                              btnContext: context,
+                              backgroundColor: ThemeColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              text: Text("Small"),
+                              borderColor: Colors.transparent,
+                            ),
+                            TruckCategory(
+                              onTap: () {},
+                              btnContext: context,
+                              backgroundColor: ThemeColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              text: Text("Medium"),
+                              borderColor: Colors.transparent,
+                            )
+                          ],
+                        ),
+                        TruckCategory(
+                          onTap: () {},
+                          btnContext: context,
+                          backgroundColor: ThemeColors.primaryColor,
+                          foregroundColor: Colors.white,
+                          text: Text("Large"),
+                          borderColor: Colors.transparent,
+                        )
+                      ])),
+                ]),
+              ),
+              Positioned(
+                bottom: 10.0,
+                left: 8.0,
+                child: FloatingActionButton(
+                  heroTag: "go_back_default",
+                  onPressed: () =>
+                      setState(() => _viewState = ViewState.DEFAULT),
+                  child: Icon(Icons.arrow_back_ios),
+                ),
+              ),
+              Positioned(
+                bottom: 10.0,
+                right: 8.0,
+                child: FloatingActionButton(
+                  heroTag: "go_ahead_truck",
+                  onPressed: () =>
+                      setState(() => _viewState = ViewState.TRUCKVIEW),
+                  child: Icon(Icons.arrow_forward_ios),
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    } else if (_viewState == ViewState.TRUCKVIEW) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 10.0),
+          child: Stack(children: [
+            Center(
+              child: SingleChildScrollView(
+                child: Column(children: [
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      height: 120,
+                      width: MediaQuery.of(context).size.width - 20,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15.0),
+                          border: Border.all(
+                              color: ThemeColors.primaryColor, width: 5.0)),
+                      child: Row(
+                        children: [
+                          Container(
+                              height: 100,
+                              width: 100,
+                              child: Image.asset('asset/images/newlogo.png')),
+                          Text('Name of Truck 1'),
+                          Text("Price = 123"),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      height: 120,
+                      width: MediaQuery.of(context).size.width - 20,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15.0),
+                          border: Border.all(
+                              color: Colors.transparent, width: 5.0)),
+                      child: Row(
+                        children: [
+                          Container(
+                              height: 100,
+                              width: 100,
+                              child: Image.asset('asset/images/newlogo.png')),
+                          Text('Name of Truck 1'),
+                          Text("Price = 123"),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      height: 120,
+                      width: MediaQuery.of(context).size.width - 20,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15.0),
+                          border: Border.all(
+                              color: Colors.transparent, width: 5.0)),
+                      child: Row(
+                        children: [
+                          Container(
+                              height: 100,
+                              width: 100,
+                              child: Image.asset('asset/images/newlogo.png')),
+                          Text('Name of Truck 1'),
+                          Text("Price = 123"),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      height: 120,
+                      width: MediaQuery.of(context).size.width - 20,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15.0),
+                          border: Border.all(
+                              color: Colors.transparent, width: 5.0)),
+                      child: Row(
+                        children: [
+                          Container(
+                              height: 100,
+                              width: 100,
+                              child: Image.asset('asset/images/newlogo.png')),
+                          Text('Name of Truck 1'),
+                          Text("Price = 123"),
+                        ],
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+            Positioned(
+              bottom: 10.0,
+              left: 8.0,
+              child: FloatingActionButton(
+                heroTag: "go_back_default",
+                onPressed: () =>
+                    setState(() => _viewState = ViewState.LOCALSTATION),
+                child: Icon(Icons.arrow_back_ios),
+              ),
+            ),
+            Positioned(
+              bottom: 10.0,
+              right: 8.0,
+              child: FloatingActionButton(
+                heroTag: "go_ahead_truck",
+                onPressed: () {},
+                child: Icon(Icons.arrow_forward_ios),
+              ),
+            )
+          ]),
+        ),
+      );
+    }
   }
 }

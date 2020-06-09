@@ -1,15 +1,22 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
+import 'package:rideapp/enums/locationview.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 
 class DropLocationMap extends StatelessWidget {
   GoogleMapController _googleMapController;
+  final LatLng initLatLng;
   final TextEditingController dropController;
 
-  DropLocationMap({Key key, @required this.dropController}) : super(key: key);
+  DropLocationMap({Key key, @required this.dropController, this.initLatLng})
+      : super(key: key);
 
   String address;
 
@@ -29,19 +36,31 @@ class DropLocationMap extends StatelessWidget {
             lastPos = position.target;
           },
           onCameraIdle: () async {
-            locationViewProvider.setDestinationLatLng(lastPos);
-            Coordinates coordinates =
-                Coordinates(lastPos.latitude, lastPos.longitude);
-            List<Address> allAddress =
-                await Geocoder.local.findAddressesFromCoordinates(coordinates);
-            address = allAddress[0].addressLine;
-            locationViewProvider.setDestinationPointAddress(address);
+            try {
+              if (locationViewProvider.getLocationView ==
+                  LocationView.DESTINATIONSELECTED) {
+                locationViewProvider.setDestinationLatLng(lastPos);
+                Response res = await get(
+                    'https://maps.googleapis.com/maps/api/geocode/json?latlng=${lastPos.latitude},${lastPos.longitude}&key=${APIKeys.googleMapsAPI}');
+                var data = jsonDecode(res.body);
+                var addressGet = data['results'][0]['formatted_address'];
+                locationViewProvider.setDestinationPointAddress(addressGet);
+                dropController.text = addressGet;
+              } else {
+                locationViewProvider.setPickUpLatLng(lastPos);
+                Response res = await get(
+                    'https://maps.googleapis.com/maps/api/geocode/json?latlng=${lastPos.latitude},${lastPos.longitude}&key=${APIKeys.googleMapsAPI}');
+                var data = jsonDecode(res.body);
+                var addressGet = data['results'][0]['formatted_address'];
+                locationViewProvider.setPickUpAddress(addressGet);
+                dropController.text = addressGet;
+              }
+            } catch (e) {
+              print(e.toString());
+            }
           },
           initialCameraPosition: CameraPosition(
-              tilt: 60.0,
-              bearing: 180,
-              zoom: 18,
-              target: locationViewProvider.getPickUpLatLng),
+              tilt: 60.0, bearing: 180, zoom: 18, target: initLatLng),
           onMapCreated: (controller) {
             _googleMapController = controller;
           },
@@ -52,6 +71,7 @@ class DropLocationMap extends StatelessWidget {
         top: 30,
         left: 10.0,
         child: FloatingActionButton(
+            heroTag: "arrow_back_drop_map",
             onPressed: () => Navigator.of(context).pop(),
             backgroundColor: ThemeColors.primaryColor,
             foregroundColor: Colors.white,
@@ -84,7 +104,7 @@ class DropLocationMap extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Image.asset(
-              'asset/marker.png',
+              'asset/images/marker-0.png',
               height: 45,
               width: 45,
             ),

@@ -80,18 +80,18 @@ class FirebaseUtils {
     }
   }
 
-  Future<Map<String, dynamic>> startPayment() async {
-    FlutterPaytm flutterPaytm = FlutterPaytm();
-    flutterPaytm.configPaytm(
-        mid: "ynWixv62790112641774",
-        verificationURL: "https://securegw.paytm.in/theia/processTransaction",
-        checksumURL: "https://phptestings--vkp1978.repl.co/pgRedirect.php",
-        industryType: "Retail",
-        website: "WEBSTAGING",
-        isTesting: true);
-    return await flutterPaytm.startPayment(
-        orderId: "ORDER34324", customerId: "USERIUOIDE", amount: "100");
-  }
+  // Future<Map<String, dynamic>> startPayment() async {
+  //   FlutterPaytm flutterPaytm = FlutterPaytm();
+  //   flutterPaytm.configPaytm(
+  //       mid: "ynWixv62790112641774",
+  //       verificationURL: "https://securegw.paytm.in/theia/processTransaction",
+  //       checksumURL: "https://phptestings--vkp1978.repl.co/pgRedirect.php",
+  //       industryType: "Retail",
+  //       website: "WEBSTAGING",
+  //       isTesting: true);
+  //   return await flutterPaytm.startPayment(
+  //       orderId: "ORDER34324", customerId: "USERIUOIDE", amount: "100");
+  // }
 
   Future<void> startOrder(
       LocationViewProvider locationViewProvider,
