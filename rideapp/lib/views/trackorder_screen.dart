@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission/permission.dart';
+import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
 import 'package:rideapp/controllers/firebase_utils.dart';
 import 'package:rideapp/controllers/static_utils.dart';
@@ -31,7 +32,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
   BitmapDescriptor pinLocationIcon;
   final Set<Marker> _markers = {};
   GoogleMapPolyline _googleMapPolyline =
-      GoogleMapPolyline(apiKey: "AIzaSyA7ki0i-XbV6vKgptzZmw7AJhF7wLfpNTc");
+      GoogleMapPolyline(apiKey: APIKeys.googleMapsAPI);
 
   void getPolyLinePoints() async {
     var permissions =
