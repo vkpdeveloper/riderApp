@@ -114,7 +114,6 @@ class AllBookings extends StatelessWidget {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0)),
             onPressed: () {
-              print(document.data['riderPoint']);
               LatLng pickUp = LatLng(document.data['riderPoint']['latitude'],
                   document.data['riderPoint']['longitude']);
               print(pickUp);

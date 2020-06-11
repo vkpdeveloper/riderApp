@@ -85,11 +85,11 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setOrderPrice(LocationViewProvider provider) async {
+  void setOrderPrice(LocationViewProvider provider, int priceFactor) async {
     _totalDistance = _utils.distanceInKmBetweenEarthCoordinates(
         provider.getPickUpLatLng, provider.getDestinationLatLng);
     print(_totalDistance);
-    _orderPrice = ((_totalDistance) * 20).round();
+    _orderPrice = ((_totalDistance) * priceFactor).round();
     notifyListeners();
   }
 

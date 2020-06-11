@@ -7,7 +7,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission/permission.dart';
 import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
-import 'package:rideapp/controllers/firebase_utils.dart';
 import 'package:rideapp/controllers/static_utils.dart';
 
 class TrackOrderScreen extends StatefulWidget {

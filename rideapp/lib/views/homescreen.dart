@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -25,7 +24,6 @@ import 'package:rideapp/providers/user_provider.dart';
 import 'package:rideapp/services/firebase_auth_service.dart';
 import 'package:rideapp/utils/uuid.dart';
 import 'package:rideapp/views/drop_location_screen.dart';
-import 'package:rideapp/widgets/truck_cat_widget.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:http/http.dart' as http;
 
@@ -64,6 +62,9 @@ class _HomeScreenState extends State<HomeScreen> {
   GlobalKey<FormState> _locationForm = GlobalKey<FormState>();
   GoogleMapPolyline _googleMapPolyline =
       GoogleMapPolyline(apiKey: APIKeys.googleMapsAPI);
+  int price;
+  bool isShowMarker = true;
+  Set<Marker> _markers = {};
 
   getCurrentLocation() async {
     _pickUpController.text = "Fetching...";
@@ -709,6 +710,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         buildingsEnabled: true,
                         polylines: _polyLines,
                         mapType: MapType.normal,
+                        markers: _markers,
                         initialCameraPosition: CameraPosition(
                           zoom: zoomView,
                           target: initLatLng,
@@ -721,7 +723,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       _buildMenu(),
                       _buildMyLocation(),
-                      pin(),
+                      if (isShowMarker) pin(),
                       _buildNotification(),
                     ],
                   ),
@@ -1012,7 +1014,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 2.0, horizontal: 8.0),
                           prefixIcon: IconButton(
-                            icon: Icon(Icons.my_location,color: Colors.green,),
+                            icon: Icon(
+                              Icons.my_location,
+                              color: Colors.green,
+                            ),
                             onPressed: () =>
                                 _scaffoldKey.currentState.openDrawer(),
                             color: ThemeColors.primaryColor,
@@ -1044,7 +1049,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 2.0, horizontal: 8.0),
                           prefixIcon: IconButton(
-                            icon: Icon(Icons.my_location, color: Colors.red,),
+                            icon: Icon(
+                              Icons.my_location,
+                              color: Colors.red,
+                            ),
                             onPressed: () =>
                                 _scaffoldKey.currentState.openDrawer(),
                             color: ThemeColors.primaryColor,
@@ -1056,8 +1064,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(10),
                           )),
                     ),
-                    
-                    
                   ]),
                 ),
               ],
@@ -1072,15 +1078,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       _destinationController.text.length > 5) {
                     List<LatLng> allLats =
                         await getPolylinePoints(locationViewProvider);
-                    setState(() => _polyLines.add(Polyline(
-                        polylineId: PolylineId('main'),
-                        color: ThemeColors.primaryColor,
-                        width: 10,
-                        endCap: Cap.buttCap,
-                        startCap: Cap.roundCap,
-                        jointType: JointType.round,
-                        points: allLats,
-                        visible: true)));
+                    setState(() {
+                      isShowMarker = false;
+                      _markers.add(Marker(
+                        markerId: MarkerId('pickmakrer'),
+                        visible: true,
+                        draggable: false,
+                        position: locationViewProvider.getPickUpLatLng,
+                        icon: BitmapDescriptor.defaultMarker,
+                      ));
+                      _markers.add(Marker(
+                        markerId: MarkerId('dropMarker'),
+                        visible: true,
+                        draggable: false,
+                        position: locationViewProvider.getDestinationLatLng,
+                        icon: BitmapDescriptor.defaultMarker,
+                      ));
+                      _polyLines.add(Polyline(
+                          polylineId: PolylineId('main'),
+                          color: ThemeColors.primaryColor,
+                          width: 10,
+                          endCap: Cap.buttCap,
+                          startCap: Cap.roundCap,
+                          jointType: JointType.round,
+                          points: allLats,
+                          visible: true));
+                    });
                     _googleMapController.moveCamera(
                         CameraUpdate.newCameraPosition(CameraPosition(
                       target: locationViewProvider.getPickUpLatLng,
@@ -1097,8 +1120,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 child: Row(
                   children: <Widget>[
-                    Text("Next", style: TextStyle(fontSize: 15),),
-                    Icon(Icons.arrow_forward_ios, color: ThemeColors.primaryColor,),
+                    Text(
+                      "Next",
+                      style: TextStyle(fontSize: 15),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: ThemeColors.primaryColor,
+                    ),
                   ],
                 ),
               ),
@@ -1115,7 +1144,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Stack(
             children: [
               Container(
-                height: (MediaQuery.of(context).size.height / 2)-100,
+                height: (MediaQuery.of(context).size.height / 2) - 100,
                 width: MediaQuery.of(context).size.width,
                 child: Column(
                   children: [
@@ -1213,13 +1242,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 left: 0.0,
                 child: FlatButton(
                   // heroTag: "go_back_default",
-                  onPressed: () =>
-                      setState(() => _viewState = ViewState.DEFAULT),
+                  onPressed: () => setState(() {
+                    _viewState = ViewState.DEFAULT;
+                    isShowMarker = true;
+                  }),
                   child: Row(
                     children: <Widget>[
                       Icon(Icons.arrow_back_ios),
-                      Text("Back",style: TextStyle(fontSize: 15),),
-                      
+                      Text(
+                        "Back",
+                        style: TextStyle(fontSize: 15),
+                      ),
                     ],
                   ),
                 ),
@@ -1232,7 +1265,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() => _viewState = ViewState.TRUCKVIEW),
                   child: Row(
                     children: <Widget>[
-                      Text("Next",style: TextStyle(fontSize: 15),),
+                      Text(
+                        "Next",
+                        style: TextStyle(fontSize: 15),
+                      ),
                       Icon(Icons.arrow_forward_ios),
                     ],
                   ),
@@ -1356,13 +1392,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   left: 8.0,
                   child: FlatButton(
                     // heroTag: "go_back_default",
-                    onPressed: () =>
-                        setState(() => _viewState = ViewState.DEFAULT),
+                    onPressed: () => setState(() {
+                      _viewState = ViewState.DEFAULT;
+                      isShowMarker = true;
+                    }),
                     child: Row(
                       children: <Widget>[
-                        
                         Icon(Icons.arrow_back_ios),
-                        Text("Back", style: TextStyle(fontSize: 15),),
+                        Text(
+                          "Back",
+                          style: TextStyle(fontSize: 15),
+                        ),
                       ],
                     ),
                   ),
@@ -1376,9 +1416,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         setState(() => _viewState = ViewState.TRUCKVIEW),
                     child: Row(
                       children: <Widget>[
-                        Text("Next", style: TextStyle(fontSize: 15),),
+                        Text(
+                          "Next",
+                          style: TextStyle(fontSize: 15),
+                        ),
                         Icon(Icons.arrow_forward_ios),
-
                       ],
                     ),
                   ),
@@ -1399,7 +1441,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Stack(children: [
               Center(
                 child: Container(
-                  height: MediaQuery.of(context).size.height/2-100,
+                  height: MediaQuery.of(context).size.height / 2 - 100,
                   child: StreamBuilder(
                     stream: Firestore.instance
                         .collection('trucks')
@@ -1428,15 +1470,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           physics: AlwaysScrollableScrollPhysics(),
                           children: snapshot.data.documents
                               .map((DocumentSnapshot truck) {
-                            int price = truck.data['priceFactor'] * 5;
+                            int priceDemo = truck.data['priceFactor'] * 5;
                             return InkWell(
                               onTap: () {
+                                setState(() => price = priceDemo);
                                 orderProvider.setTruckName(truck.data['name']);
                               },
                               child: Container(
                                   height: 110,
-                                  width: (MediaQuery.of(context).size.width / 3) +
-                                      30,
+                                  width:
+                                      (MediaQuery.of(context).size.width / 3) +
+                                          30,
                                   decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(15),
@@ -1501,7 +1545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               SizedBox(height: 8.0),
                                               Text(
-                                                "Price : $price",
+                                                "Price : $priceDemo",
                                                 style: TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 14.0),
@@ -1532,12 +1576,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 left: 8.0,
                 child: FlatButton(
                   // heroTag: "go_back_default",
-                  onPressed: () =>
-                      setState(() => _viewState = ViewState.LOCALSTATION),
+                  onPressed: () {
+                    if (orderProvider.getStationView == StationView.LOCAL)
+                      setState(() => _viewState = ViewState.LOCALSTATION);
+                    else {
+                      setState(() => _viewState = ViewState.OUTSIDESTATION);
+                    }
+                  },
                   child: Row(
                     children: <Widget>[
                       Icon(Icons.arrow_back_ios),
-                     Text("Back", style: TextStyle(fontSize: 15),),
+                      Text(
+                        "Back",
+                        style: TextStyle(fontSize: 15),
+                      ),
                     ],
                   ),
                 ),
@@ -1548,11 +1600,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: FlatButton(
                   // heroTag: "go_ahead_truck",
                   onPressed: () {
-                    Navigator.pushNamed(context, "/orderdetailsscreen");
+                    print(price);
+                    if (price == null) {
+                      Fluttertoast.showToast(msg: "Please select a truck");
+                    } else {
+                      orderProvider.setOrderPrice(locationViewProvider, price);
+                      Navigator.pushNamed(context, '/orderdetailsscreen');
+                    }
                   },
                   child: Row(
                     children: <Widget>[
-                      Text("Next", style: TextStyle(fontSize: 15),),
+                      Text(
+                        "Next",
+                        style: TextStyle(fontSize: 15),
+                      ),
                       Icon(Icons.arrow_forward_ios),
                     ],
                   ),

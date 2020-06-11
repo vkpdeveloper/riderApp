@@ -150,10 +150,11 @@ class OrderSuccessful extends StatelessWidget {
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 hoverElevation: 12.0,
                 icon: Icon(Icons.location_on),
-                onPressed: () {},
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/allordersscreen'),
                 foregroundColor: Colors.white,
                 backgroundColor: ThemeColors.primaryColor,
-                label: Text("TRACK")),
+                label: Text("All ORDERS")),
             SizedBox(
               height: 40.0,
             ),
