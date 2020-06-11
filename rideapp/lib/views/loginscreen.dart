@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: <Widget>[
                   Container(
                     width: _width,
-                    height: _height / 2,
+                    height: _height / 1.8,
                     decoration: BoxDecoration(color: ThemeColors.primaryColor),
                   ),
                   Positioned(
@@ -319,34 +319,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           Text(
                             "Facebook",
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                    MaterialButton(
-                      color: Colors.green,
-                      onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                            builder: (BuildContext context) => EmailLogin()));
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Icon(
-                            Icons.email,
-                            color: Colors.white,
-                            size: 25.0,
-                          ),
-                          SizedBox(
-                            width: 10.0,
-                          ),
-                          Text(
-                            "Email",
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                                 color: Colors.white,

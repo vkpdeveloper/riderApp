@@ -53,7 +53,7 @@ class OrderDetailsScreen extends StatelessWidget {
                         Row(
                           children: <Widget>[
                             Icon(Icons.location_on,
-                                color: ThemeColors.primaryColor),
+                                color: Colors.green),
                             SizedBox(width: 10.0),
                             Flexible(
                               child: Text(
@@ -88,7 +88,7 @@ class OrderDetailsScreen extends StatelessWidget {
                             Row(
                               children: <Widget>[
                                 Icon(Icons.location_on,
-                                    color: ThemeColors.primaryColor),
+                                    color: Colors.red),
                                 SizedBox(width: 10.0),
                                 Flexible(
                                   child: Text(
@@ -233,196 +233,196 @@ class OrderDetailsScreen extends StatelessWidget {
                       ),
                     )
                   ],
-                  if (orderProvider.getSelectedLocalView == 1 &&
-                      orderProvider.getStationView == StationView.LOCAL) ...[
-                    SizedBox(height: 10.0),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 15.0, vertical: 10.0),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: Text("Select Vehicle",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: ThemeColors.primaryColor,
-                                fontSize: 18.0)),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: DropdownButton<String>(
-                          onChanged: (String value) {
-                            orderProvider.setTruckCategoryLocal(value);
-                          },
-                          elevation: 5,
-                          value: orderProvider.getSelectedTruckLocal,
-                          items: orderProvider.getTruckCatLocal
-                              .map((String truck) {
-                            return DropdownMenuItem(
-                              value: truck,
-                              child: Text(truck),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 190,
-                      child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: StreamBuilder(
-                            stream: Firestore.instance
-                                .collection('trucks')
-                                .where("category",
-                                    isEqualTo:
-                                        orderProvider.getSelectedTruckLocal)
-                                .snapshots(),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<QuerySnapshot> snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return Center(
-                                    child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      ThemeColors.primaryColor),
-                                ));
-                              } else {
-                                if (snapshot.data.documents.length == 0) {
-                                  return Center(
-                                      child:
-                                          Text("No Trucks of this category !"));
-                                }
-                                return ListView(
-                                  scrollDirection: Axis.horizontal,
-                                  shrinkWrap: true,
-                                  children: snapshot.data.documents
-                                      .map((DocumentSnapshot truck) {
-                                    return InkWell(
-                                      onTap: () {
-                                        orderProvider
-                                            .setTruckName(truck.data['name']);
-                                      },
-                                      child: Container(
-                                          height: 180,
-                                          width: (MediaQuery.of(context)
-                                                      .size
-                                                      .width /
-                                                  3) +
-                                              30,
-                                          decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(15),
-                                              border: Border.all(
-                                                  color: orderProvider
-                                                              .getTruckName ==
-                                                          truck.data['name']
-                                                      ? ThemeColors.primaryColor
-                                                      : Colors.white,
-                                                  style: BorderStyle.solid,
-                                                  width: 3),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    blurRadius: 10,
-                                                    color: Colors.grey.shade100,
-                                                    spreadRadius: 4.0)
-                                              ]),
-                                          margin: const EdgeInsets.all(10.0),
-                                          child: Container(
-                                            child: Column(
-                                              children: <Widget>[
-                                                SizedBox(height: 5),
-                                                ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15),
-                                                    child: CachedNetworkImage(
-                                                      imageUrl:
-                                                          truck.data['image'],
-                                                      placeholder:
-                                                          (context, str) {
-                                                        return Container(
-                                                          height: 50,
-                                                          child: Center(
-                                                              child: CircularProgressIndicator(
-                                                                  valueColor: AlwaysStoppedAnimation<
-                                                                          Color>(
-                                                                      ThemeColors
-                                                                          .primaryColor))),
-                                                        );
-                                                      },
-                                                    )),
-                                                Expanded(
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            bottom: 10),
-                                                    child: Align(
-                                                      alignment: Alignment
-                                                          .bottomCenter,
-                                                      child: Text(
-                                                          truck.data['name'],
-                                                          style: TextStyle(
-                                                              color: ThemeColors
-                                                                  .primaryColor,
-                                                              fontSize: 16.0)),
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          )),
-                                    );
-                                  }).toList(),
-                                );
-                              }
-                            },
-                          )),
-                    ),
-                  ],
-                  if (orderProvider.getStationView == StationView.OUTSIDE) ...[
-                    SizedBox(height: 10.0),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 15.0, vertical: 10.0),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: Text("Select Vehicle",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: ThemeColors.primaryColor,
-                                fontSize: 18.0)),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: DropdownButton<String>(
-                          onChanged: (String value) {
-                            orderProvider.setTruckCategory(value);
-                          },
-                          elevation: 5,
-                          value: orderProvider.getSelectedTruck,
-                          items: orderProvider.getTruckCategory
-                              .map((String truck) {
-                            return DropdownMenuItem(
-                              value: truck,
-                              child: Text(truck),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 190,
-                      child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text("Hello World")),
-                    ),
-                  ],
+                  // if (orderProvider.getSelectedLocalView == 1 &&
+                  //     orderProvider.getStationView == StationView.LOCAL) ...[
+                  //   SizedBox(height: 10.0),
+                  //   Padding(
+                  //     padding: const EdgeInsets.symmetric(
+                  //         horizontal: 15.0, vertical: 10.0),
+                  //     child: Align(
+                  //       alignment: Alignment.topLeft,
+                  //       child: Text("Select Vehicle",
+                  //           style: TextStyle(
+                  //               fontWeight: FontWeight.bold,
+                  //               color: ThemeColors.primaryColor,
+                  //               fontSize: 18.0)),
+                  //     ),
+                  //   ),
+                  //   Padding(
+                  //     padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                  //     child: Align(
+                  //       alignment: Alignment.topLeft,
+                  //       child: DropdownButton<String>(
+                  //         onChanged: (String value) {
+                  //           orderProvider.setTruckCategoryLocal(value);
+                  //         },
+                  //         elevation: 5,
+                  //         value: orderProvider.getSelectedTruckLocal,
+                  //         items: orderProvider.getTruckCatLocal
+                  //             .map((String truck) {
+                  //           return DropdownMenuItem(
+                  //             value: truck,
+                  //             child: Text(truck),
+                  //           );
+                  //         }).toList(),
+                  //       ),
+                  //     ),
+                  //   ),
+                  //   Container(
+                  //     height: 190,
+                  //     child: Padding(
+                  //         padding: const EdgeInsets.symmetric(horizontal: 10),
+                  //         child: StreamBuilder(
+                  //           stream: Firestore.instance
+                  //               .collection('trucks')
+                  //               .where("category",
+                  //                   isEqualTo:
+                  //                       orderProvider.getSelectedTruckLocal)
+                  //               .snapshots(),
+                  //           builder: (BuildContext context,
+                  //               AsyncSnapshot<QuerySnapshot> snapshot) {
+                  //             if (snapshot.connectionState ==
+                  //                 ConnectionState.waiting) {
+                  //               return Center(
+                  //                   child: CircularProgressIndicator(
+                  //                 valueColor: AlwaysStoppedAnimation<Color>(
+                  //                     ThemeColors.primaryColor),
+                  //               ));
+                  //             } else {
+                  //               if (snapshot.data.documents.length == 0) {
+                  //                 return Center(
+                  //                     child:
+                  //                         Text("No Trucks of this category !"));
+                  //               }
+                  //               return ListView(
+                  //                 scrollDirection: Axis.horizontal,
+                  //                 shrinkWrap: true,
+                  //                 children: snapshot.data.documents
+                  //                     .map((DocumentSnapshot truck) {
+                  //                   return InkWell(
+                  //                     onTap: () {
+                  //                       orderProvider
+                  //                           .setTruckName(truck.data['name']);
+                  //                     },
+                  //                     child: Container(
+                  //                         height: 180,
+                  //                         width: (MediaQuery.of(context)
+                  //                                     .size
+                  //                                     .width /
+                  //                                 3) +
+                  //                             30,
+                  //                         decoration: BoxDecoration(
+                  //                             color: Colors.white,
+                  //                             borderRadius:
+                  //                                 BorderRadius.circular(15),
+                  //                             border: Border.all(
+                  //                                 color: orderProvider
+                  //                                             .getTruckName ==
+                  //                                         truck.data['name']
+                  //                                     ? ThemeColors.primaryColor
+                  //                                     : Colors.white,
+                  //                                 style: BorderStyle.solid,
+                  //                                 width: 3),
+                  //                             boxShadow: [
+                  //                               BoxShadow(
+                  //                                   blurRadius: 10,
+                  //                                   color: Colors.grey.shade100,
+                  //                                   spreadRadius: 4.0)
+                  //                             ]),
+                  //                         margin: const EdgeInsets.all(10.0),
+                  //                         child: Container(
+                  //                           child: Column(
+                  //                             children: <Widget>[
+                  //                               SizedBox(height: 5),
+                  //                               ClipRRect(
+                  //                                   borderRadius:
+                  //                                       BorderRadius.circular(
+                  //                                           15),
+                  //                                   child: CachedNetworkImage(
+                  //                                     imageUrl:
+                  //                                         truck.data['image'],
+                  //                                     placeholder:
+                  //                                         (context, str) {
+                  //                                       return Container(
+                  //                                         height: 50,
+                  //                                         child: Center(
+                  //                                             child: CircularProgressIndicator(
+                  //                                                 valueColor: AlwaysStoppedAnimation<
+                  //                                                         Color>(
+                  //                                                     ThemeColors
+                  //                                                         .primaryColor))),
+                  //                                       );
+                  //                                     },
+                  //                                   )),
+                  //                               Expanded(
+                  //                                 child: Padding(
+                  //                                   padding:
+                  //                                       const EdgeInsets.only(
+                  //                                           bottom: 10),
+                  //                                   child: Align(
+                  //                                     alignment: Alignment
+                  //                                         .bottomCenter,
+                  //                                     child: Text(
+                  //                                         truck.data['name'],
+                  //                                         style: TextStyle(
+                  //                                             color: ThemeColors
+                  //                                                 .primaryColor,
+                  //                                             fontSize: 16.0)),
+                  //                                   ),
+                  //                                 ),
+                  //                               )
+                  //                             ],
+                  //                           ),
+                  //                         )),
+                  //                   );
+                  //                 }).toList(),
+                  //               );
+                  //             }
+                  //           },
+                  //         )),
+                  //   ),
+                  // ],
+                  // if (orderProvider.getStationView == StationView.OUTSIDE) ...[
+                  //   SizedBox(height: 10.0),
+                  //   Padding(
+                  //     padding: const EdgeInsets.symmetric(
+                  //         horizontal: 15.0, vertical: 10.0),
+                  //     child: Align(
+                  //       alignment: Alignment.topLeft,
+                  //       child: Text("Select Vehicle",
+                  //           style: TextStyle(
+                  //               fontWeight: FontWeight.bold,
+                  //               color: ThemeColors.primaryColor,
+                  //               fontSize: 18.0)),
+                  //     ),
+                  //   ),
+                  //   Padding(
+                  //     padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                  //     child: Align(
+                  //       alignment: Alignment.topLeft,
+                  //       child: DropdownButton<String>(
+                  //         onChanged: (String value) {
+                  //           orderProvider.setTruckCategory(value);
+                  //         },
+                  //         elevation: 5,
+                  //         value: orderProvider.getSelectedTruck,
+                  //         items: orderProvider.getTruckCategory
+                  //             .map((String truck) {
+                  //           return DropdownMenuItem(
+                  //             value: truck,
+                  //             child: Text(truck),
+                  //           );
+                  //         }).toList(),
+                  //       ),
+                  //     ),
+                  //   ),
+                  //   Container(
+                  //     height: 190,
+                  //     child: Padding(
+                  //         padding: const EdgeInsets.symmetric(horizontal: 10),
+                  //         child: Text("Hello World")),
+                  //   ),
+                  // ],
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 15.0, vertical: 10.0),
