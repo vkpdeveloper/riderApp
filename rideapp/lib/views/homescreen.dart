@@ -277,6 +277,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 ListTile(
+                  onTap: () => Navigator.pushNamed(context, '/notifications'),
+                  leading: Icon(Icons.notifications,
+                      color: ThemeColors.primaryColor),
+                  title: Text(
+                    "Notifications",
+                    style: TextStyle(color: ThemeColors.primaryColor),
+                  ),
+                ),
+                ListTile(
                   leading: Icon(Feather.info, color: ThemeColors.primaryColor),
                   title: GestureDetector(
                     onTap: () {},
@@ -469,7 +478,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       ThemeColors.primaryColor,
                                                   fontSize: 16.0),
                                               decoration: InputDecoration(
-                                                  icon: Icon(Octicons.check,
+                                                  icon: Icon(
+                                                      Octicons.primitive_dot,
                                                       color: Colors.red),
                                                   hintText:
                                                       "Your Drop Location",
@@ -840,7 +850,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           FloatingActionButton(
             heroTag: "notification_home",
-            onPressed: () => _scaffoldKey.currentState.openDrawer(),
+            onPressed: () => Navigator.pushNamed(context, '/notifications'),
             child: Icon(MaterialIcons.notifications),
             backgroundColor: ThemeColors.primaryColor,
             foregroundColor: Colors.white,
@@ -870,6 +880,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return SafeArea(
         child: Stack(
           children: [
+            Container(
+              height: MediaQuery.of(context).size.height / 2 - 100,
+              width: MediaQuery.of(context).size.width,
+            ),
             Column(
               children: [
                 Align(
@@ -906,7 +920,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       color: ThemeColors.primaryColor,
                                       width: 4.0)
                                   : null,
-                              color: Colors.white,
+                              color: isLocalSelected
+                                  ? Colors.blue[300]
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(10.0),
                               boxShadow: [
                                 BoxShadow(
@@ -952,7 +968,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       color: ThemeColors.primaryColor,
                                       width: 4.0)
                                   : null,
-                              color: Colors.white,
+                              color: isOutSideSelected
+                                  ? Colors.blue[300]
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(10.0),
                               boxShadow: [
                                 BoxShadow(
@@ -994,7 +1012,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           contentPadding: EdgeInsets.symmetric(
                               vertical: 2.0, horizontal: 8.0),
                           prefixIcon: IconButton(
-                            icon: Icon(Icons.my_location),
+                            icon: Icon(Icons.my_location,color: Colors.green,),
                             onPressed: () =>
                                 _scaffoldKey.currentState.openDrawer(),
                             color: ThemeColors.primaryColor,
@@ -1009,45 +1027,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(
                       height: 15.0,
                     ),
-                    // TextField(
-                    //   onChanged: (val) {
-                    //     locationViewProvider.setDestinationPointAddress(val);
-                    //   },
-                    //   onTap: () {
-                    //     locationViewProvider
-                    //         .setLocationView(LocationView.DESTINATIONSELECTED);
+                    TextField(
+                      onChanged: (val) {
+                        locationViewProvider.setDestinationPointAddress(val);
+                      },
+                      onTap: () {
+                        locationViewProvider
+                            .setLocationView(LocationView.DESTINATIONSELECTED);
 
-                    //     _controller.open();
-                    //   },
-                    //   controller: _destinationController,
-                    //   style: TextStyle(color: Colors.black, fontSize: 16.0),
-                    //   readOnly: true,
-                    //   decoration: InputDecoration(
-                    //       contentPadding: EdgeInsets.symmetric(
-                    //           vertical: 2.0, horizontal: 8.0),
-                    //       prefixIcon: IconButton(
-                    //         icon: Icon(Icons.my_location),
-                    //         onPressed: () =>
-                    //             _scaffoldKey.currentState.openDrawer(),
-                    //         color: ThemeColors.primaryColor,
-                    //       ),
-                    //       hintText: "Your Drop Location",
-                    //       border: OutlineInputBorder(
-                    //         borderSide:
-                    //             BorderSide(color: ThemeColors.primaryColor),
-                    //         borderRadius: BorderRadius.circular(10),
-                    //       )),
-                    // ),
-                    SizedBox(
-                      height: 0,
+                        _controller.open();
+                      },
+                      controller: _destinationController,
+                      style: TextStyle(color: Colors.black, fontSize: 16.0),
+                      readOnly: true,
+                      decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 2.0, horizontal: 8.0),
+                          prefixIcon: IconButton(
+                            icon: Icon(Icons.my_location, color: Colors.red,),
+                            onPressed: () =>
+                                _scaffoldKey.currentState.openDrawer(),
+                            color: ThemeColors.primaryColor,
+                          ),
+                          hintText: "Your Drop Location",
+                          border: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(color: ThemeColors.primaryColor),
+                            borderRadius: BorderRadius.circular(10),
+                          )),
                     ),
-                    ListTile(
-                      contentPadding: EdgeInsets.all(0),
-                      leading: Icon(Icons.star),
-                      title: Text("Choose a Saved Place",
-                          style: TextStyle(fontSize: 18)),
-                      trailing: Icon(Icons.arrow_forward_ios),
-                    )
+                    
+                    
                   ]),
                 ),
               ],
@@ -1055,8 +1065,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               bottom: 10,
               right: 8.0,
-              child: FloatingActionButton(
-                heroTag: "go_ahead_default",
+              child: FlatButton(
+                // heroTag: "go_ahead_default",
                 onPressed: () async {
                   if (_pickUpController.text.length > 5 &&
                       _destinationController.text.length > 5) {
@@ -1076,6 +1086,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       target: locationViewProvider.getPickUpLatLng,
                       zoom: 10,
                     )));
+
                     if (orderProvider.getStationView == StationView.LOCAL)
                       setState(() => _viewState = ViewState.LOCALSTATION);
                     else
@@ -1084,26 +1095,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     _controller.open();
                   }
                 },
-                child: Icon(Icons.arrow_forward_ios),
+                child: Row(
+                  children: <Widget>[
+                    Text("Next", style: TextStyle(fontSize: 15),),
+                    Icon(Icons.arrow_forward_ios, color: ThemeColors.primaryColor,),
+                  ],
+                ),
               ),
             )
           ],
         ),
       );
     } else if (_viewState == ViewState.LOCALSTATION) {
-      return SafeArea(
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          primary: true,
+      return SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        primary: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: Stack(
             children: [
               Container(
-                height: (MediaQuery.of(context).size.height / 2) - 80,
+                height: (MediaQuery.of(context).size.height / 2)-100,
+                width: MediaQuery.of(context).size.width,
                 child: Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 0.0),
+                          horizontal: 0.0, vertical: 0.0),
                       child: Column(children: <Widget>[
                         Container(
                           height: 80,
@@ -1160,6 +1178,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         // SizedBox(
                         //   height: 10.0,
                         // ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(0, 15, 0, 0),
+                            child: Text("Select Truck Category"),
+                          ),
+                        ),
                         SizedBox(
                           width: MediaQuery.of(context).size.width - 50,
                           child: DropdownButton<String>(
@@ -1184,23 +1209,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Positioned(
-                bottom: 35.0,
-                left: 8.0,
-                child: FloatingActionButton(
-                  heroTag: "go_back_default",
+                bottom: 0.0,
+                left: 0.0,
+                child: FlatButton(
+                  // heroTag: "go_back_default",
                   onPressed: () =>
                       setState(() => _viewState = ViewState.DEFAULT),
-                  child: Icon(Icons.arrow_back_ios),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.arrow_back_ios),
+                      Text("Back",style: TextStyle(fontSize: 15),),
+                      
+                    ],
+                  ),
                 ),
               ),
               Positioned(
-                bottom: 35.0,
-                right: 8.0,
-                child: FloatingActionButton(
-                  heroTag: "go_ahead_truck",
+                bottom: 0.0,
+                right: 0.0,
+                child: FlatButton(
                   onPressed: () =>
                       setState(() => _viewState = ViewState.TRUCKVIEW),
-                  child: Icon(Icons.arrow_forward_ios),
+                  child: Row(
+                    children: <Widget>[
+                      Text("Next",style: TextStyle(fontSize: 15),),
+                      Icon(Icons.arrow_forward_ios),
+                    ],
+                  ),
                 ),
               )
             ],
@@ -1209,279 +1244,322 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     } else if (_viewState == ViewState.OUTSIDESTATION) {
       return SafeArea(
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          primary: true,
-          child: Stack(
-            children: [
-              Container(
-                height: (MediaQuery.of(context).size.height / 2) - 80,
-                child: Column(children: [
-                  Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 0.0),
-                      child: Column(children: <Widget>[
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10.0),
-                          child: Container(
-                            height: 80,
-                            padding:
-                                EdgeInsets.only(top: 10.0, right: 10, left: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.black26,
-                              borderRadius: BorderRadius.circular(10.0),
-                              // boxShadow: [
-                              //   BoxShadow(
-                              //       color: Colors.grey.shade100,
-                              //       blurRadius: 10.0,
-                              //       spreadRadius: 5.0)
-                              // ]
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Octicons.primitive_dot,
-                                        color: Colors.green),
-                                    SizedBox(width: 10.0),
-                                    Text(
-                                      _pickUpController.text,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  ],
-                                ),
-                                SizedBox(
-                                  height: 05.0,
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(Octicons.primitive_dot,
-                                        color: Colors.red),
-                                    SizedBox(width: 10.0),
-                                    Text(
-                                      _destinationController.text,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  ],
-                                ),
-                              ],
+        child: Container(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          child: SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            primary: true,
+            child: Stack(
+              children: [
+                Container(
+                  height: (MediaQuery.of(context).size.height / 2) - 80,
+                  child: Column(children: [
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0, vertical: 0.0),
+                        child: Column(children: <Widget>[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10.0),
+                            child: Container(
+                              height: 80,
+                              padding: EdgeInsets.only(
+                                  top: 10.0, right: 10, left: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.black26,
+                                borderRadius: BorderRadius.circular(10.0),
+                                // boxShadow: [
+                                //   BoxShadow(
+                                //       color: Colors.grey.shade100,
+                                //       blurRadius: 10.0,
+                                //       spreadRadius: 5.0)
+                                // ]
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Octicons.primitive_dot,
+                                          color: Colors.green),
+                                      SizedBox(width: 10.0),
+                                      Text(
+                                        _pickUpController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: 05.0,
+                                  ),
+                                  Row(
+                                    children: [
+                                      Icon(Octicons.primitive_dot,
+                                          color: Colors.red),
+                                      SizedBox(width: 10.0),
+                                      Text(
+                                        _destinationController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(
-                          height: 15.0,
-                        ),
-                        TextField(
-                          style: TextStyle(color: Colors.black, fontSize: 16.0),
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                              hintText: "Your Estimated Price",
-                              border: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: ThemeColors.primaryColor),
-                                borderRadius: BorderRadius.circular(10),
-                              )),
-                        ),
-                        SizedBox(
-                          height: 15.0,
-                        ),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width - 50,
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            onChanged: (String value) {
-                              orderProvider.setTruckCategory(value);
-                            },
-                            elevation: 5,
-                            value: orderProvider.getSelectedTruck,
-                            items: orderProvider.getTruckCategory
-                                .map((String truck) {
-                              return DropdownMenuItem(
-                                value: truck,
-                                child: Text(truck),
-                              );
-                            }).toList(),
+                          SizedBox(
+                            height: 15.0,
                           ),
-                        ),
-                      ])),
-                ]),
-              ),
-              Positioned(
-                bottom: 35.0,
-                left: 8.0,
-                child: FloatingActionButton(
-                  heroTag: "go_back_default",
-                  onPressed: () =>
-                      setState(() => _viewState = ViewState.DEFAULT),
-                  child: Icon(Icons.arrow_back_ios),
+                          TextField(
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16.0),
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                                hintText: "Your Estimated Price",
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: ThemeColors.primaryColor),
+                                  borderRadius: BorderRadius.circular(10),
+                                )),
+                          ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(0, 15, 0, 0),
+                              child: Text("Select Truck Category"),
+                            ),
+                          ),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width - 50,
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              onChanged: (String value) {
+                                setState(() {
+                                  orderProvider.setTruckCategory(value);
+                                });
+                              },
+                              elevation: 5,
+                              value: orderProvider.getSelectedTruck,
+                              items: orderProvider.getTruckCategory
+                                  .map((String truck) {
+                                return DropdownMenuItem(
+                                  value: truck,
+                                  child: Text(truck),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ])),
+                  ]),
                 ),
-              ),
-              Positioned(
-                bottom: 35.0,
-                right: 8.0,
-                child: FloatingActionButton(
-                  heroTag: "go_ahead_truck",
-                  onPressed: () =>
-                      setState(() => _viewState = ViewState.TRUCKVIEW),
-                  child: Icon(Icons.arrow_forward_ios),
+                Positioned(
+                  bottom: 35.0,
+                  left: 8.0,
+                  child: FlatButton(
+                    // heroTag: "go_back_default",
+                    onPressed: () =>
+                        setState(() => _viewState = ViewState.DEFAULT),
+                    child: Row(
+                      children: <Widget>[
+                        
+                        Icon(Icons.arrow_back_ios),
+                        Text("Back", style: TextStyle(fontSize: 15),),
+                      ],
+                    ),
+                  ),
                 ),
-              )
-            ],
+                Positioned(
+                  bottom: 35.0,
+                  right: 8.0,
+                  child: FlatButton(
+                    // heroTag: "go_ahead_truck",
+                    onPressed: () =>
+                        setState(() => _viewState = ViewState.TRUCKVIEW),
+                    child: Row(
+                      children: <Widget>[
+                        Text("Next", style: TextStyle(fontSize: 15),),
+                        Icon(Icons.arrow_forward_ios),
+
+                      ],
+                    ),
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       );
     } else if (_viewState == ViewState.TRUCKVIEW) {
       return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 0.0),
-          child: Stack(children: [
-            Center(
-              child: StreamBuilder(
-                stream: Firestore.instance
-                    .collection('trucks')
-                    .where("category",
-                        isEqualTo: _viewState == ViewState.LOCALSTATION
-                            ? orderProvider.getSelectedTruckLocal
-                            : orderProvider.getSelectedTruck)
-                    .snapshots(),
-                builder: (BuildContext context,
-                    AsyncSnapshot<QuerySnapshot> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                        child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          ThemeColors.primaryColor),
-                    ));
-                  } else {
-                    if (snapshot.data.documents.length == 0) {
-                      return Center(
-                          child: Text("No Trucks of this category !"));
-                    }
-                    return ListView(
-                      scrollDirection: Axis.vertical,
-                      shrinkWrap: true,
-                      primary: true,
-                      physics: AlwaysScrollableScrollPhysics(),
-                      children:
-                          snapshot.data.documents.map((DocumentSnapshot truck) {
-                        int price = truck.data['priceFactor'] * 5;
-                        return InkWell(
-                          onTap: () {
-                            orderProvider.setTruckName(truck.data['name']);
-                          },
-                          child: Container(
-                              height: 140,
-                              width:
-                                  (MediaQuery.of(context).size.width / 3) + 30,
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                      color: orderProvider.getTruckName ==
-                                              truck.data['name']
-                                          ? ThemeColors.primaryColor
-                                          : Colors.white,
-                                      style: BorderStyle.solid,
-                                      width: 3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        blurRadius: 10,
-                                        color: Colors.grey.shade100,
-                                        spreadRadius: 4.0)
-                                  ]),
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 20.0, vertical: 10.0),
+        child: Container(
+          height: MediaQuery.of(context).size.height / 3,
+          width: MediaQuery.of(context).size.width,
+          child: SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            primary: true,
+            child: Stack(children: [
+              Center(
+                child: Container(
+                  height: MediaQuery.of(context).size.height/2-100,
+                  child: StreamBuilder(
+                    stream: Firestore.instance
+                        .collection('trucks')
+                        .where("category",
+                            isEqualTo: _viewState == ViewState.LOCALSTATION
+                                ? orderProvider.getSelectedTruckLocal
+                                : orderProvider.getSelectedTruck)
+                        .snapshots(),
+                    builder: (BuildContext context,
+                        AsyncSnapshot<QuerySnapshot> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                            child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              ThemeColors.primaryColor),
+                        ));
+                      } else {
+                        if (snapshot.data.documents.length == 0) {
+                          return Center(
+                              child: Text("No Trucks of this category !"));
+                        }
+                        return ListView(
+                          scrollDirection: Axis.vertical,
+                          shrinkWrap: true,
+                          primary: true,
+                          physics: AlwaysScrollableScrollPhysics(),
+                          children: snapshot.data.documents
+                              .map((DocumentSnapshot truck) {
+                            int price = truck.data['priceFactor'] * 5;
+                            return InkWell(
+                              onTap: () {
+                                orderProvider.setTruckName(truck.data['name']);
+                              },
                               child: Container(
-                                child: Row(
-                                  children: <Widget>[
-                                    CachedNetworkImage(
-                                      imageBuilder: (context, provider) {
-                                        return Container(
-                                            margin: EdgeInsets.symmetric(
-                                                horizontal: 10),
-                                            height: 100,
-                                            width: 100,
-                                            child: Image(
-                                                image: provider,
+                                  height: 110,
+                                  width: (MediaQuery.of(context).size.width / 3) +
+                                      30,
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      border: Border.all(
+                                          color: orderProvider.getTruckName ==
+                                                  truck.data['name']
+                                              ? ThemeColors.primaryColor
+                                              : Colors.white,
+                                          style: BorderStyle.solid,
+                                          width: 3),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            blurRadius: 10,
+                                            color: Colors.grey.shade100,
+                                            spreadRadius: 4.0)
+                                      ]),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 20.0, vertical: 10.0),
+                                  child: Container(
+                                    child: Row(
+                                      children: <Widget>[
+                                        CachedNetworkImage(
+                                          imageBuilder: (context, provider) {
+                                            return Container(
+                                                margin: EdgeInsets.symmetric(
+                                                    horizontal: 10),
                                                 height: 100,
-                                                width: 100));
-                                      },
-                                      imageUrl: truck.data['image'],
-                                      placeholder: (context, str) {
-                                        return Container(
-                                          margin: EdgeInsets.symmetric(
-                                              horizontal: 10),
-                                          height: 100,
-                                          width: 100,
-                                          child: Image.asset(
-                                              'asset/images/newlogo.png'),
-                                        );
-                                      },
+                                                width: 100,
+                                                child: Image(
+                                                    image: provider,
+                                                    height: 100,
+                                                    width: 100));
+                                          },
+                                          imageUrl: truck.data['image'],
+                                          placeholder: (context, str) {
+                                            return Container(
+                                              margin: EdgeInsets.symmetric(
+                                                  horizontal: 10),
+                                              height: 100,
+                                              width: 100,
+                                              child: Image.asset(
+                                                  'asset/images/newlogo.png'),
+                                            );
+                                          },
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: MediaQuery.of(context)
+                                                          .size
+                                                          .width /
+                                                      3 -
+                                                  80),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                truck.data['name'],
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14.0),
+                                              ),
+                                              SizedBox(height: 8.0),
+                                              Text(
+                                                "Price : $price",
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14.0),
+                                              ),
+                                              SizedBox(height: 8.0),
+                                              Text(
+                                                "Time : 20 min",
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14.0),
+                                              )
+                                            ],
+                                          ),
+                                        )
+                                      ],
                                     ),
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: MediaQuery.of(context)
-                                                      .size
-                                                      .width /
-                                                  3 -
-                                              80),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            truck.data['name'],
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14.0),
-                                          ),
-                                          SizedBox(height: 8.0),
-                                          Text(
-                                            "Price : $price",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14.0),
-                                          ),
-                                          SizedBox(height: 8.0),
-                                          Text(
-                                            "Time : 2min",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14.0),
-                                          )
-                                        ],
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              )),
+                                  )),
+                            );
+                          }).toList(),
                         );
-                      }).toList(),
-                    );
-                  }
-                },
+                      }
+                    },
+                  ),
+                ),
               ),
-            ),
-            Positioned(
-              bottom: 10.0,
-              left: 8.0,
-              child: FloatingActionButton(
-                heroTag: "go_back_default",
-                onPressed: () =>
-                    setState(() => _viewState = ViewState.LOCALSTATION),
-                child: Icon(Icons.arrow_back_ios),
+              Positioned(
+                bottom: 20.0,
+                left: 8.0,
+                child: FlatButton(
+                  // heroTag: "go_back_default",
+                  onPressed: () =>
+                      setState(() => _viewState = ViewState.LOCALSTATION),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.arrow_back_ios),
+                     Text("Back", style: TextStyle(fontSize: 15),),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            Positioned(
-              bottom: 10.0,
-              right: 8.0,
-              child: FloatingActionButton(
-                heroTag: "go_ahead_truck",
-                onPressed: () {},
-                child: Icon(Icons.arrow_forward_ios),
-              ),
-            )
-          ]),
+              Positioned(
+                bottom: 20.0,
+                right: 8.0,
+                child: FlatButton(
+                  // heroTag: "go_ahead_truck",
+                  onPressed: () {
+                    Navigator.pushNamed(context, "/orderdetailsscreen");
+                  },
+                  child: Row(
+                    children: <Widget>[
+                      Text("Next", style: TextStyle(fontSize: 15),),
+                      Icon(Icons.arrow_forward_ios),
+                    ],
+                  ),
+                ),
+              )
+            ]),
+          ),
         ),
       );
     } else if (true == false) {
