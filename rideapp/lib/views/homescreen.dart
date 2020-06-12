@@ -238,15 +238,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       : userPreferences.getUserEmail),
                 ),
                 ListTile(
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/savedaddressscreen'),
-                  leading: Icon(Icons.location_city,
-                      color: ThemeColors.primaryColor),
+                  onTap: () => Navigator.pushNamed(context, '/allordersscreen'),
+                  leading:
+                      Icon(Icons.event_note, color: ThemeColors.primaryColor),
                   title: Text(
-                    "Saved Address",
+                    "All Bookings",
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
+               
                 ListTile(
                   onTap: () => Navigator.pushNamed(context, '/walletscreen'),
                   leading: Icon(Icons.account_balance_wallet,
@@ -268,15 +268,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
-                ListTile(
-                  onTap: () => Navigator.pushNamed(context, '/allordersscreen'),
-                  leading:
-                      Icon(Icons.event_note, color: ThemeColors.primaryColor),
+                 ListTile(
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/savedaddressscreen'),
+                  leading: Icon(Icons.location_city,
+                      color: ThemeColors.primaryColor),
                   title: Text(
-                    "All Bookings",
+                    "Saved Address",
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
+                
                 ListTile(
                   onTap: () => Navigator.pushNamed(context, '/notifications'),
                   leading: Icon(Icons.notifications,
@@ -862,7 +864,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           FloatingActionButton(
             heroTag: "home_sch",
-            onPressed: () {},
+            onPressed: () async{
+              await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(Duration(days: 30)));
+              await showTimePicker(context: context, initialTime: TimeOfDay.now());
+            },
             child: Icon(Icons.watch_later),
             backgroundColor: ThemeColors.primaryColor,
             foregroundColor: Colors.white,
@@ -1470,7 +1475,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           physics: AlwaysScrollableScrollPhysics(),
                           children: snapshot.data.documents
                               .map((DocumentSnapshot truck) {
-                            int priceDemo = truck.data['priceFactor'] * 5;
+                              int priceDemo =   orderProvider.getOrderPrice;
+                            int priceDemo0 = truck.data['priceFactor'] * 5;
                             return InkWell(
                               onTap: () {
                                 setState(() => price = priceDemo);
@@ -1526,39 +1532,46 @@ class _HomeScreenState extends State<HomeScreen> {
                                             );
                                           },
                                         ),
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: MediaQuery.of(context)
-                                                          .size
-                                                          .width /
-                                                      3 -
-                                                  80),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                truck.data['name'],
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14.0),
-                                              ),
-                                              SizedBox(height: 8.0),
-                                              Text(
-                                                "Price : $priceDemo",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14.0),
-                                              ),
-                                              SizedBox(height: 8.0),
-                                              Text(
-                                                "Time : 20 min",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14.0),
-                                              )
-                                            ],
-                                          ),
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: <Widget>[
+                                                Text(
+                                                  truck.data['name'],
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14.0),
+                                                ),
+                                                SizedBox(width: 5),
+                                                Text(
+                                                  "20 min away",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14.0),
+                                                ),
+                                              ],
+                                            ),
+                                            
+                                             Text(
+                                                  "Capacity: 1000KG",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 14.0),
+                                                ),
+                                                Text(
+                                              "Estimated Fare :  ₹ $priceDemo",
+                                              style: TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                  fontSize: 18.0),
+                                            ),
+                                          ],
                                         )
                                       ],
                                     ),

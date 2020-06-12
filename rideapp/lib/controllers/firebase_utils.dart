@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterpaytm/flutterpaytm.dart';
@@ -104,7 +105,7 @@ class FirebaseUtils {
     dialog.style(
       elevation: 8.0,
       borderRadius: 15,
-      message: "Finding vendor...",
+      message: "Searching for truck...",
       backgroundColor: Colors.white,
       insetAnimCurve: Curves.bounceIn,
     );
@@ -171,15 +172,15 @@ class FirebaseUtils {
     };
     _firestoreOrder.document(orderID).setData(orderData).then((value) {
       dialog.hide();
-      Fluttertoast.showToast(msg: "Order Placed");
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => OrderSuccessful(
-                    orderID: orderID,
-                  )));
+      Fluttertoast.showToast(
+        backgroundColor: Colors.blue,
+        msg: "Order Placed");
+      Navigator.pushReplacementNamed(
+          context, "/allordersscreen");
     });
   }
+
+  
 
   void addBooking(
       DocumentSnapshot snapshot,
@@ -229,13 +230,9 @@ class FirebaseUtils {
         .updateData({"isFree": false}).then((value) {
       Fluttertoast.showToast(msg: "Order Placed");
       dialog.hide();
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => OrderSuccessful(
-                    orderID: orderID,
-                  )));
     });
+    
+    
   }
 
   void updateProfile(

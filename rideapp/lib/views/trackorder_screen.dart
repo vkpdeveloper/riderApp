@@ -125,7 +125,44 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                     visible: true));
               });
             },
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+               child: Container(
+
+                 color: Colors.white,
+                 height: MediaQuery.of(context).size.height/4,
+                 width: MediaQuery.of(context).size.width,
+                 child: Padding(
+                   padding: const EdgeInsets.symmetric(vertical: 20,horizontal: 20),
+                   child: Center(
+                     child: Row(
+                       mainAxisAlignment: MainAxisAlignment.spaceAround,
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: <Widget>[
+                         Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: <Widget>[
+                             
+                           Text("   Drop Location",style: TextStyle(fontSize: 20),),
+                           Text("   PickUp Location", style: TextStyle(fontSize: 20),),
+                           Text("   Driver Name \n   Phone Number", style: TextStyle(fontSize: 20),),
+                           
+                         ],),
+                         Container(
+                           height: 100,
+                           width: 100,
+                           child: Image.asset("asset/images/driverdefault.png", fit: BoxFit.fill,))
+                         
+                       ],
+                     ),
+                   ),
+                 ),
+
+              
+            ),
           )
+
         ],
       ),
     );

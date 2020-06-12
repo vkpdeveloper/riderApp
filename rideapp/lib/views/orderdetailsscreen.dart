@@ -175,64 +175,7 @@ class OrderDetailsScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (orderProvider.getStationView == StationView.LOCAL) ...[
-                    SizedBox(height: 10.0),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 15.0, vertical: 10.0),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: Text("Select Delivery Mode",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: ThemeColors.primaryColor,
-                                fontSize: 18.0)),
-                      ),
-                    ),
-                    RadioListTile(
-                      onChanged: (val) {
-                        orderProvider.setLocalView(val);
-                      },
-                      activeColor: ThemeColors.primaryColor,
-                      groupValue: orderProvider.getSelectedLocalView,
-                      title: Text("Part Load"),
-                      value: 0,
-                    ),
-                    RadioListTile(
-                      onChanged: (val) {
-                        orderProvider.setLocalView(val);
-                      },
-                      activeColor: ThemeColors.primaryColor,
-                      groupValue: orderProvider.getSelectedLocalView,
-                      title: Text("Full Truck Load"),
-                      value: 1,
-                    )
-                  ],
-                  if (orderProvider.getSelectedLocalView == 0 &&
-                      orderProvider.getStationView == StationView.LOCAL) ...[
-                    Form(
-                      key: capacityFormKey,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                        child: TextFormField(
-                          validator: (val) {
-                            if (val.length != 6) {
-                              return "Invalid Weight";
-                            }
-                          },
-                          onSaved: (val) {
-                            orderProvider.setReceiverPhone(val);
-                          },
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                              hintText: "In weight",
-                              prefixIcon: Icon(Icons.check_box_outline_blank),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0))),
-                        ),
-                      ),
-                    )
-                  ],
+                  
                   // if (orderProvider.getSelectedLocalView == 1 &&
                   //     orderProvider.getStationView == StationView.LOCAL) ...[
                   //   SizedBox(height: 10.0),
@@ -452,6 +395,15 @@ class OrderDetailsScreen extends StatelessWidget {
                     value: 1,
                     groupValue: orderProvider.getSelectedPaymentMethod,
                     title: Text("Credit and Debit Card"),
+                  ),
+                   RadioListTile(
+                    activeColor: ThemeColors.primaryColor,
+                    onChanged: (val) {
+                      orderProvider.setPaymentMethod(val);
+                    },
+                    value: 2,
+                    groupValue: orderProvider.getSelectedPaymentMethod,
+                    title: Text("Cash"),
                   ),
                   SizedBox(height: 60.0),
                 ],

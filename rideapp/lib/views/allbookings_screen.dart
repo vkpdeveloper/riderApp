@@ -18,7 +18,7 @@ class AllBookings extends StatelessWidget {
           color: Colors.white,
           icon: Icon(Icons.arrow_back_ios),
         ),
-        title: Text("Order History"),
+        title: Text("Your Orders"),
       ),
       body: StreamBuilder(
         stream: Firestore.instance
@@ -43,7 +43,7 @@ class AllBookings extends StatelessWidget {
                   children:
                       snapshot.data.documents.map((DocumentSnapshot document) {
                     return Padding(
-                      padding: const EdgeInsets.all(15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       child: Container(
                         child: Card(
                           elevation: 8.0,
@@ -69,7 +69,7 @@ class AllBookings extends StatelessWidget {
                                   Align(
                                     alignment: Alignment.topLeft,
                                     child: Text(
-                                      "Your Agent : ${document["riderPhone"]}",
+                                      "Your Agent : ${document["riderPhone"]??"Asigning Driver..."}",
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black54),
@@ -149,7 +149,7 @@ class AllBookings extends StatelessWidget {
             },
             color: ThemeColors.primaryColor,
             child: Text(
-              "TRACK ORDER",
+              "TRACK SHIPMENT",
               style: TextStyle(color: Colors.white),
             ),
             minWidth: (MediaQuery.of(context).size.width - 70),
@@ -161,7 +161,7 @@ class AllBookings extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Text(
-            "ORDER NOT STARTED YET !",
+            "Searching For Truck...",
             style: TextStyle(
                 color: ThemeColors.primaryColor,
                 fontSize: 16.0,
