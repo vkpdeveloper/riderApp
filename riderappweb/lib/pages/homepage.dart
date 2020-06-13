@@ -158,14 +158,6 @@ class _HomePageState extends State<HomePage> {
     checkDevice() {
       if (MediaQuery.of(context).size.width <= 700) {
         setState(() {
-          if (MediaQuery.of(context).size.height <= 600 == false) {
-            if (isArrowClicked)
-              isArrowClicked = false;
-            else
-              isArrowClicked = true;
-          } else {
-            isArrowClicked = false;
-          }
           deviceView = DeviceView.MOBILE;
         });
       } else {
@@ -318,7 +310,9 @@ class _HomePageState extends State<HomePage> {
                     child: Container(
                       height: 50,
                       padding: const EdgeInsets.all(5.0),
-                      width: (MediaQuery.of(context).size.width / 9) - 20,
+                      width: deviceView == DeviceView.WEB
+                          ? (MediaQuery.of(context).size.width / 9) - 20
+                          : MediaQuery.of(context).size.width / 2 - 40,
                       margin: const EdgeInsets.all(8.0),
                       decoration: BoxDecoration(
                           border:
@@ -353,7 +347,9 @@ class _HomePageState extends State<HomePage> {
                     },
                     child: Container(
                       height: 50,
-                      width: (MediaQuery.of(context).size.width / 9) - 20,
+                      width: deviceView == DeviceView.WEB
+                          ? (MediaQuery.of(context).size.width / 9) - 20
+                          : MediaQuery.of(context).size.width / 2 - 40,
                       margin: const EdgeInsets.all(8.0),
                       padding: const EdgeInsets.all(5.0),
                       decoration: BoxDecoration(
@@ -533,28 +529,6 @@ class _HomePageState extends State<HomePage> {
     if (_dropText.isEmpty || _pickUpText.isEmpty) {
       return Column(
         children: <Widget>[
-          ListTile(
-            contentPadding: const EdgeInsets.all(0),
-            leading: CircleAvatar(
-              backgroundColor: ThemeColors.primaryColor,
-              child: Icon(
-                Icons.home,
-                color: Colors.white,
-              ),
-            ),
-            title: Text("Add Home Address"),
-          ),
-          ListTile(
-            contentPadding: const EdgeInsets.all(0),
-            leading: CircleAvatar(
-              backgroundColor: ThemeColors.primaryColor,
-              child: Icon(
-                Icons.work,
-                color: Colors.white,
-              ),
-            ),
-            title: Text("Add Office Address"),
-          ),
           ListTile(
             onTap: () {
               locationViewProvider.setPickUpLatLng(initPos);
