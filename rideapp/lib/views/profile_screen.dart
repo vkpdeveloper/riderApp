@@ -93,7 +93,7 @@ class ProfileScreen extends StatelessWidget {
                       _nameController.text,
                       _phoneController.text,
                       _emailController.text,
-                      prefs))
+                      prefs, context))
             ],
           ),
         ),

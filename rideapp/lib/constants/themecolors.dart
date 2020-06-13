@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 mixin ThemeColors {
   static Color primaryColor = Color(0xFF012060);
  // Color(0xFFD86F13);
-  
+  static Color yellowColor = Color(0xFFD86F13);
   static Color darkblueColor = Color(0xFF012060);
   static Color lightblueColor = Color(0xFF00A8F3);
   

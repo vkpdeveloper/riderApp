@@ -28,8 +28,11 @@ class _SplashScreenState extends State<SplashScreen> {
         result == ConnectivityResult.wifi) {
       Timer(Duration(seconds: 3), () async {
         if (await _firebaseUtils.getLoggedIn()) {
+          if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/homescreen');
         } else {
+          if (!mounted) return;
+
           Navigator.pushReplacementNamed(context, '/loginscreen');
         }
       });
@@ -48,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (await _utils.getLoggedIn()) {
         UserPreferences userPreferences =
             Provider.of<UserPreferences>(context, listen: false);
-        userPreferences.init();
+        userPreferences.init(context);
       }
     }
 

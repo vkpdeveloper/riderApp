@@ -137,8 +137,14 @@ class FirebaseUtils {
       ProgressDialog dialog,
       UserPreferences userPreferences,
       BuildContext context) {
+    DateTime currentDate = new DateTime.now();
+    String paymentMethod = "";
+    if (orderProvider.getSelectedPaymentMethod == 0) paymentMethod = "Paytm";
+    if (orderProvider.getSelectedPaymentMethod == 1)
+      paymentMethod = "CC or DC Card";
+    if (orderProvider.getSelectedPaymentMethod == 2) paymentMethod = "Cash";
     String orderID =
-        "ORDER${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
+        "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
     print(orderID);
     Map<String, dynamic> orderData = {
       "orderID": orderID,
@@ -148,9 +154,7 @@ class FirebaseUtils {
       "userPhone": userPreferences.getUserPhone,
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
-      "paymentMethod": orderProvider.getSelectedPaymentMethod == 0
-          ? "Paytm"
-          : "CC or DC Card",
+      "paymentMethod": paymentMethod,
       "pickUpLatLng": {
         "latitude": locationViewProvider.getPickUpLatLng.latitude,
         "longitude": locationViewProvider.getPickUpLatLng.longitude
@@ -172,15 +176,60 @@ class FirebaseUtils {
     };
     _firestoreOrder.document(orderID).setData(orderData).then((value) {
       dialog.hide();
-      Fluttertoast.showToast(
-        backgroundColor: Colors.blue,
-        msg: "Order Placed");
-      Navigator.pushReplacementNamed(
-          context, "/allordersscreen");
+      Fluttertoast.showToast(backgroundColor: Colors.blue, msg: "Order Placed");
+      Navigator.pushReplacementNamed(context, "/allordersscreen");
     });
   }
 
-  
+  void addForOutside(
+      LocationViewProvider locationViewProvider,
+      OrderProvider orderProvider,
+      ProgressDialog dialog,
+      UserPreferences userPreferences,
+      BuildContext context) {
+    String paymentMethod = "";
+    if (orderProvider.getSelectedPaymentMethod == 0) paymentMethod = "Paytm";
+    if (orderProvider.getSelectedPaymentMethod == 1)
+      paymentMethod = "CC or DC Card";
+    if (orderProvider.getSelectedPaymentMethod == 2) paymentMethod = "Cash";
+    DateTime currentDate = new DateTime.now();
+
+    String orderID =
+        "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
+    Map<String, dynamic> orderData = {
+      "orderID": orderID,
+      "userID": userPreferences.getUserID,
+      "userToken": userPreferences.getUserToken,
+      "userName": userPreferences.getUserName,
+      "userPhone": userPreferences.getUserPhone,
+      "receiverName": orderProvider.getReceiverName,
+      "receiverPhone": orderProvider.getReceiverPhone,
+      "paymentMethod": paymentMethod,
+      "pickUpLatLng": {
+        "latitude": locationViewProvider.getPickUpLatLng.latitude,
+        "longitude": locationViewProvider.getPickUpLatLng.longitude
+      },
+      "destLatLng": {
+        "latitude": locationViewProvider.getDestinationLatLng.latitude,
+        "longitude": locationViewProvider.getDestinationLatLng.longitude
+      },
+      "orderType": "OUTSTATION",
+      "addresses": [
+        locationViewProvider.getPickUpPointAddress,
+        locationViewProvider.getDestinationPointAddress
+      ],
+      "isPending": true,
+      "isStart": false,
+      "isDelivered": false,
+      "distance": orderProvider.getTotalDistance,
+      "price": orderProvider.getOrderPrice,
+      "truckName": orderProvider.getTruckName
+    };
+    _firestoreOrder
+        .document(orderID)
+        .setData(orderData)
+        .whenComplete(() => Fluttertoast.showToast(msg: "Order Placed"));
+  }
 
   void addBooking(
       DocumentSnapshot snapshot,
@@ -189,8 +238,14 @@ class FirebaseUtils {
       ProgressDialog dialog,
       UserPreferences userPreferences,
       BuildContext context) {
+    String paymentMethod = "";
+    if (orderProvider.getSelectedPaymentMethod == 0) paymentMethod = "Paytm";
+    if (orderProvider.getSelectedPaymentMethod == 1)
+      paymentMethod = "CC or DC Card";
+    if (orderProvider.getSelectedPaymentMethod == 2) paymentMethod = "Cash";
+    DateTime currentDate = new DateTime.now();
     String orderID =
-        "ORDER${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
+        "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
     print(orderID);
     Map<String, dynamic> orderData = {
       "orderID": orderID,
@@ -200,9 +255,7 @@ class FirebaseUtils {
       "userPhone": userPreferences.getUserPhone,
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
-      "paymentMethod": orderProvider.getSelectedPaymentMethod == 0
-          ? "Paytm"
-          : "CC or DC Card",
+      "paymentMethod": paymentMethod,
       "riderUserID": snapshot.data['userID'],
       "riderPhone": snapshot.documentID,
       "pickUpLatLng": {
@@ -218,6 +271,7 @@ class FirebaseUtils {
         locationViewProvider.getDestinationPointAddress
       ],
       "isPending": false,
+      "isPicked": false,
       "isStart": false,
       "isDelivered": false,
       "distance": orderProvider.getTotalDistance,
@@ -231,16 +285,14 @@ class FirebaseUtils {
       Fluttertoast.showToast(msg: "Order Placed");
       dialog.hide();
     });
-    
-    
   }
 
-  void updateProfile(
-      String name, String phone, String email, UserPreferences preferences) {
+  void updateProfile(String name, String phone, String email,
+      UserPreferences preferences, BuildContext context) {
     _firestoreUser.document(preferences.getUserID).updateData({
       "name": name,
       "email": email,
       "phone": "+91$phone",
-    }).whenComplete(() => preferences.init());
+    }).whenComplete(() => preferences.init(context));
   }
 }

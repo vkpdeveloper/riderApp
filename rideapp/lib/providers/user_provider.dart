@@ -22,7 +22,7 @@ class UserPreferences with ChangeNotifier {
     _walletMoney = 0;
   }
 
-  void init() async {
+  void init(BuildContext context) async {
     ConnectivityResult result = await Connectivity().checkConnectivity();
     if (result == ConnectivityResult.mobile ||
         result == ConnectivityResult.wifi) {
@@ -31,13 +31,19 @@ class UserPreferences with ChangeNotifier {
       DocumentSnapshot userData =
           await Firestore.instance.collection('user').document(_userID).get();
       print(userData.data);
-      _name = userData.data['name'];
+      if(userData.exists) {
+        _name = userData.data['name'];
       _email = userData.data['email'];
       _phoneNumber = userData.data['phone'];
       _token = userData.data['token'];
       DocumentSnapshot _walletDoc =
           await Firestore.instance.collection('wallet').document(_userID).get();
       _walletMoney = _walletDoc.data['money'];
+      } else {
+        FirebaseAuth _auth = FirebaseAuth.instance;
+        _auth.signOut();
+        Navigator.of(context).pushNamed('/loginscreen');
+      }
     }
     notifyListeners();
   }

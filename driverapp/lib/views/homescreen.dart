@@ -380,8 +380,7 @@ class _TrackOrderState extends State<HomeScreen> {
             header: isPanelOpen
                 ? Container()
                 : Padding(
-                    padding:
-                        EdgeInsets.all(8.0),
+                    padding: EdgeInsets.all(8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: <Widget>[
@@ -391,8 +390,11 @@ class _TrackOrderState extends State<HomeScreen> {
                               fontSize: 16.0, fontWeight: FontWeight.bold),
                         ),
                         Padding(
-                            padding: EdgeInsets.fromLTRB( 
-                                    MediaQuery.of(context).size.width / 2 - 40, 0, 10, 0),
+                            padding: EdgeInsets.fromLTRB(
+                                MediaQuery.of(context).size.width / 2 - 40,
+                                0,
+                                10,
+                                0),
                             child: RichText(
                               text: TextSpan(
                                   style: TextStyle(
@@ -409,7 +411,6 @@ class _TrackOrderState extends State<HomeScreen> {
                     )),
             minHeight: MediaQuery.of(context).size.height / 3 + 10,
             maxHeight: MediaQuery.of(context).size.height,
-            
             collapsed: Padding(
               padding: const EdgeInsets.only(top: 30.0),
               child: Column(
@@ -434,13 +435,19 @@ class _TrackOrderState extends State<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           FloatingActionButton.extended(
-                            label: Text("Decline", style: TextStyle(color: Colors.black),),
+                            label: Text(
+                              "Decline",
+                              style: TextStyle(color: Colors.black),
+                            ),
                             foregroundColor: Colors.white,
                             backgroundColor: Colors.white,
                             onPressed: () =>
                                 _firebaseUtils.declineOrder(orderid, context),
                             heroTag: "decline",
-                            icon: Icon(Icons.close, color: Colors.black,),
+                            icon: Icon(
+                              Icons.close,
+                              color: Colors.black,
+                            ),
                           ),
                           FloatingActionButton.extended(
                             label: Text("Accept"),
@@ -593,13 +600,29 @@ class _TrackOrderState extends State<HomeScreen> {
           appBar: AppBar(
             title: Text("Home"),
             actions: <Widget>[
-              Switch(
-                activeColor: Colors.lightBlue,
-                value: userPreferences.getIsFree,
-                onChanged: (val) {
-                  userPreferences.setIsFree(val);
-                },
-              )
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    userPreferences.getIsFree ? "Online" : "Offline",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color:
+                          userPreferences.getIsFree ? Colors.green : Colors.red,
+                    ),
+                  ),
+                  Switch(
+                    activeColor: Colors.lightBlue,
+                    value: userPreferences.getIsFree,
+                    onChanged: (val) {
+                      userPreferences.setIsFree(val);
+                      if (val = true){
+                        getOrderDetails();
+                      }
+                    },
+                  )
+                ],
+              ),
             ],
           ),
           drawer: Drawer(
@@ -691,10 +714,24 @@ class _TrackOrderState extends State<HomeScreen> {
             ),
           ),
           body: Center(
-              child: Text(
+              child: Container(
+                height: 100,
+                width: 200,
+                child: Column(
+                  children: <Widget>[
+                    Text(
             "No live orders !",
             style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-          )));
+          ),
+          MaterialButton(onPressed: (){
+            getOrderDetails();
+            
+          },
+          child: Text("Refresh"),
+          )
+                  ],
+                ),
+              )));
     }
   }
 }

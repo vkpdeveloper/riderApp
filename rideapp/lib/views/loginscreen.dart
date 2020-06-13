@@ -36,7 +36,6 @@ class _LoginScreenState extends State<LoginScreen> {
     AuthCredential authCreds = PhoneAuthProvider.getCredential(
         verificationId: verId, smsCode: smsCode);
     FirebaseUser _user = await signIn(authCreds);
-    assert(_user.uid != null);
     if (_user != null) {
       print(_user.uid);
       Navigator.pushReplacementNamed(context, '/customerscreen');

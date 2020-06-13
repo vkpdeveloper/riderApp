@@ -13,6 +13,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:rideapp/constants/apikeys.dart';
 import 'package:rideapp/constants/themecolors.dart';
+import 'package:rideapp/controllers/static_utils.dart';
 import 'package:rideapp/enums/locationview.dart';
 import 'package:rideapp/enums/station_view.dart';
 import 'package:rideapp/enums/view_state.dart';
@@ -50,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool hasSearchTerm = false;
   bool isSearchingCurrently = false;
   String searchVal = "";
+  StaticUtils _utils = StaticUtils();
   String googleMapsAPIKeys = APIKeys.googleMapsAPI;
   LocationResult locationResult;
   String sessionToken = Uuid().generateV4();
@@ -57,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<Polyline> _polyLines = {};
   ViewState _viewState = ViewState.DEFAULT;
   FocusNode _dropFocusNode = FocusNode();
+  BitmapDescriptor pinLocationIcon;
   final String SEARCHING_LOCATIONS = "Searching locations...";
   final String NOT_FOUND = "No result found";
   GlobalKey<FormState> _locationForm = GlobalKey<FormState>();
@@ -104,6 +107,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _pickUpController.addListener(_onSearchChangedPickUp);
     _destinationController.addListener(_onSearchChangedDrop);
     getCurrentLocation();
+    _utils.getBytesFromAsset('asset/images/marker.png', 124).then((value) {
+      pinLocationIcon = BitmapDescriptor.fromBytes(value);
+    });
   }
 
   _onSearchChangedPickUp() {
@@ -216,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
     FirebaseAuthService _auth =
         Provider.of<FirebaseAuthService>(context, listen: false);
     if (userPreferences.getUserName == "") {
-      userPreferences.init();
+      userPreferences.init(context);
     }
     return WillPopScope(
       onWillPop: () async {
@@ -246,7 +252,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
-               
                 ListTile(
                   onTap: () => Navigator.pushNamed(context, '/walletscreen'),
                   leading: Icon(Icons.account_balance_wallet,
@@ -268,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
-                 ListTile(
+                ListTile(
                   onTap: () =>
                       Navigator.pushNamed(context, '/savedaddressscreen'),
                   leading: Icon(Icons.location_city,
@@ -278,7 +283,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
-                
                 ListTile(
                   onTap: () => Navigator.pushNamed(context, '/notifications'),
                   leading: Icon(Icons.notifications,
@@ -847,34 +851,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNotification() {
-    return Positioned(
-      top: 35,
-      right: 10.0,
-      child: Column(
-        children: [
-          FloatingActionButton(
-            heroTag: "notification_home",
-            onPressed: () => Navigator.pushNamed(context, '/notifications'),
-            child: Icon(MaterialIcons.notifications),
-            backgroundColor: ThemeColors.primaryColor,
-            foregroundColor: Colors.white,
-          ),
-          SizedBox(
-            height: 10.0,
-          ),
-          FloatingActionButton(
-            heroTag: "home_sch",
-            onPressed: () async{
-              await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime.now().add(Duration(days: 30)));
-              await showTimePicker(context: context, initialTime: TimeOfDay.now());
-            },
-            child: Icon(Icons.watch_later),
-            backgroundColor: ThemeColors.primaryColor,
-            foregroundColor: Colors.white,
-          ),
-        ],
-      ),
-    );
+    if (_viewState == ViewState.DEFAULT)
+      return Positioned(
+        top: 35,
+        right: 10.0,
+        child: Column(
+          children: [
+            FloatingActionButton(
+              heroTag: "notification_home",
+              onPressed: () => Navigator.pushNamed(context, '/notifications'),
+              child: Icon(MaterialIcons.notifications),
+              backgroundColor: ThemeColors.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            SizedBox(
+              height: 10.0,
+            ),
+            FloatingActionButton(
+              heroTag: "home_sch",
+              onPressed: () async {
+                await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(Duration(days: 30)));
+                await showTimePicker(
+                    context: context, initialTime: TimeOfDay.now());
+              },
+              child: Icon(Icons.watch_later),
+              backgroundColor: ThemeColors.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+          ],
+        ),
+      );
+    else {
+      return Container();
+    }
   }
 
   Widget _isSearchingOrNotFound(String result) {
@@ -1023,8 +1036,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Icons.my_location,
                               color: Colors.green,
                             ),
-                            onPressed: () =>
-                                _scaffoldKey.currentState.openDrawer(),
+                            onPressed: () {},
                             color: ThemeColors.primaryColor,
                           ),
                           hintText: "Your Pickup Location",
@@ -1058,8 +1070,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               Icons.my_location,
                               color: Colors.red,
                             ),
-                            onPressed: () =>
-                                _scaffoldKey.currentState.openDrawer(),
+                            onPressed: () => {},
                             color: ThemeColors.primaryColor,
                           ),
                           hintText: "Your Drop Location",
@@ -1086,19 +1097,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     setState(() {
                       isShowMarker = false;
                       _markers.add(Marker(
-                        markerId: MarkerId('pickmakrer'),
+                        markerId: MarkerId('pickmarker'),
                         visible: true,
                         draggable: false,
                         position: locationViewProvider.getPickUpLatLng,
-                        icon: BitmapDescriptor.defaultMarker,
+                        icon: pinLocationIcon,
                       ));
                       _markers.add(Marker(
-                        markerId: MarkerId('dropMarker'),
-                        visible: true,
-                        draggable: false,
-                        position: locationViewProvider.getDestinationLatLng,
-                        icon: BitmapDescriptor.defaultMarker,
-                      ));
+                          markerId: MarkerId('dropmarker'),
+                          visible: true,
+                          draggable: false,
+                          position: locationViewProvider.getDestinationLatLng,
+                          icon: pinLocationIcon));
                       _polyLines.add(Polyline(
                           polylineId: PolylineId('main'),
                           color: ThemeColors.primaryColor,
@@ -1172,9 +1182,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icon(Octicons.primitive_dot,
                                       color: Colors.green),
                                   SizedBox(width: 10.0),
-                                  Text(
-                                    _pickUpController.text,
-                                    overflow: TextOverflow.ellipsis,
+                                  Flexible(
+                                    child: Text(
+                                      _pickUpController.text,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   )
                                 ],
                               ),
@@ -1186,9 +1198,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icon(Octicons.primitive_dot,
                                       color: Colors.red),
                                   SizedBox(width: 10.0),
-                                  Text(
-                                    _destinationController.text,
-                                    overflow: TextOverflow.ellipsis,
+                                  Flexible(
+                                    child: Text(
+                                      _destinationController.text,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   )
                                 ],
                               ),
@@ -1224,6 +1238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: DropdownButton<String>(
                             isExpanded: true,
                             onChanged: (String value) {
+                              print(value);
                               orderProvider.setTruckCategoryLocal(value);
                             },
                             elevation: 5,
@@ -1248,6 +1263,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: FlatButton(
                   // heroTag: "go_back_default",
                   onPressed: () => setState(() {
+                    _markers.removeWhere((element) =>
+                        element.markerId == MarkerId('pickmarker'));
+                    _markers.removeWhere((element) =>
+                        element.markerId == MarkerId('dropmarker'));
+                    _polyLines.removeWhere(
+                        (element) => element.polylineId == PolylineId('main'));
                     _viewState = ViewState.DEFAULT;
                     isShowMarker = true;
                   }),
@@ -1323,9 +1344,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Icon(Octicons.primitive_dot,
                                           color: Colors.green),
                                       SizedBox(width: 10.0),
-                                      Text(
-                                        _pickUpController.text,
-                                        overflow: TextOverflow.ellipsis,
+                                      Flexible(
+                                        child: Text(
+                                          _pickUpController.text,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       )
                                     ],
                                   ),
@@ -1337,9 +1360,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Icon(Octicons.primitive_dot,
                                           color: Colors.red),
                                       SizedBox(width: 10.0),
-                                      Text(
-                                        _destinationController.text,
-                                        overflow: TextOverflow.ellipsis,
+                                      Flexible(
+                                        child: Text(
+                                          _destinationController.text,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       )
                                     ],
                                   ),
@@ -1398,6 +1423,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: FlatButton(
                     // heroTag: "go_back_default",
                     onPressed: () => setState(() {
+                      _markers.removeWhere((element) =>
+                          element.markerId == MarkerId('pickmarker'));
+                      _markers.removeWhere((element) =>
+                          element.markerId == MarkerId('dropmarker'));
+                      _polyLines.removeWhere((element) =>
+                          element.polylineId == PolylineId('main'));
                       _viewState = ViewState.DEFAULT;
                       isShowMarker = true;
                     }),
@@ -1436,6 +1467,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } else if (_viewState == ViewState.TRUCKVIEW) {
+      print(orderProvider.getSelectedTruckLocal);
       return SafeArea(
         child: Container(
           height: MediaQuery.of(context).size.height / 3,
@@ -1451,7 +1483,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     stream: Firestore.instance
                         .collection('trucks')
                         .where("category",
-                            isEqualTo: _viewState == ViewState.LOCALSTATION
+                            isEqualTo: orderProvider.getStationView ==
+                                    StationView.LOCAL
                                 ? orderProvider.getSelectedTruckLocal
                                 : orderProvider.getSelectedTruck)
                         .snapshots(),
@@ -1468,116 +1501,106 @@ class _HomeScreenState extends State<HomeScreen> {
                           return Center(
                               child: Text("No Trucks of this category !"));
                         }
-                        return ListView(
-                          scrollDirection: Axis.vertical,
-                          shrinkWrap: true,
-                          primary: true,
-                          physics: AlwaysScrollableScrollPhysics(),
-                          children: snapshot.data.documents
-                              .map((DocumentSnapshot truck) {
-                              int priceDemo =   orderProvider.getOrderPrice;
-                            int priceDemo0 = truck.data['priceFactor'] * 5;
-                            return InkWell(
-                              onTap: () {
-                                setState(() => price = priceDemo);
-                                orderProvider.setTruckName(truck.data['name']);
-                              },
-                              child: Container(
-                                  height: 110,
-                                  width:
-                                      (MediaQuery.of(context).size.width / 3) +
-                                          30,
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(15),
-                                      border: Border.all(
-                                          color: orderProvider.getTruckName ==
-                                                  truck.data['name']
-                                              ? ThemeColors.primaryColor
-                                              : Colors.white,
-                                          style: BorderStyle.solid,
-                                          width: 3),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            blurRadius: 10,
-                                            color: Colors.grey.shade100,
-                                            spreadRadius: 4.0)
-                                      ]),
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 20.0, vertical: 10.0),
-                                  child: Container(
-                                    child: Row(
-                                      children: <Widget>[
-                                        CachedNetworkImage(
-                                          imageBuilder: (context, provider) {
-                                            return Container(
-                                                margin: EdgeInsets.symmetric(
-                                                    horizontal: 10),
-                                                height: 100,
-                                                width: 100,
-                                                child: Image(
-                                                    image: provider,
-                                                    height: 100,
-                                                    width: 100));
-                                          },
-                                          imageUrl: truck.data['image'],
-                                          placeholder: (context, str) {
-                                            return Container(
-                                              margin: EdgeInsets.symmetric(
-                                                  horizontal: 10),
-                                              height: 100,
-                                              width: 100,
-                                              child: Image.asset(
-                                                  'asset/images/newlogo.png'),
-                                            );
-                                          },
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
+                        return Column(
+                          
+                          children: <Widget>[
+                            Container(
+                              height: 200,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                shrinkWrap: true,
+                                primary: true,
+                                physics: AlwaysScrollableScrollPhysics(),
+                                children: snapshot.data.documents
+                                    .map((DocumentSnapshot truck) {
+                                  int priceDemo = orderProvider.getOrderPrice;
+                                  return InkWell(
+                                    onTap: () {
+                                      setState(() => price = priceDemo);
+                                      orderProvider.setTruckName(truck.data['name']);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Container(
+                                          width: 200,
+                                          decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(15),
+                                              border: Border.all(
+                                                  color: orderProvider.getTruckName ==
+                                                          truck.data['name']
+                                                      ? ThemeColors.primaryColor
+                                                      : Colors.white,
+                                                  style: BorderStyle.solid,
+                                                  width: 3),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                    blurRadius: 10,
+                                                    color: Colors.grey.shade100,
+                                                    spreadRadius: 4.0)
+                                              ]),
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 10.0, vertical: 0.0),
+                                          child: Container(
+                                            child: Column(
                                               children: <Widget>[
                                                 Text(
-                                                  truck.data['name'],
+                                                  ' ${truck.data['name']} ${truck.data['capacity']}',
                                                   style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                                      fontWeight: FontWeight.bold,
                                                       fontSize: 14.0),
                                                 ),
-                                                SizedBox(width: 5),
+                                                CachedNetworkImage(
+                                                  imageBuilder: (context, provider) {
+                                                    return Container(
+                                                        margin: EdgeInsets.symmetric(
+                                                            horizontal: 10),
+                                                        height: 80,
+                                                        width: 80,
+                                                        child: Image(
+                                                            image: provider,
+                                                            height: 100,
+                                                            width: 100));
+                                                  },
+                                                  imageUrl: truck.data['image'],
+                                                  placeholder: (context, str) {
+                                                    return Container(
+                                                      margin: EdgeInsets.symmetric(
+                                                          horizontal: 10),
+                                                      height: 100,
+                                                      width: 100,
+                                                      child: Image.asset(
+                                                          'asset/images/newlogo.png'),
+                                                    );
+                                                  },
+                                                ),
                                                 Text(
                                                   "20 min away",
                                                   style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 14.0),
-                                                ),
-                                              ],
-                                            ),
-                                            
-                                             Text(
-                                                  "Capacity: 1000KG",
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                                      fontWeight: FontWeight.bold,
                                                       fontSize: 14.0),
                                                 ),
                                                 Text(
-                                              "Estimated Fare :  ₹ $priceDemo",
-                                              style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
-                                                  fontSize: 18.0),
+                                                  "  Size : ${truck.data['dimension']}",
+                                                  style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 14.0),
+                                                ),
+                                                Text(
+                                                  "Estimated Fare :  ₹ ${priceDemo.toString()}",
+                                                  style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 18.0),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        )
-                                      ],
+                                          )),
                                     ),
-                                  )),
-                            );
-                          }).toList(),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
                         );
                       }
                     },
@@ -1613,11 +1636,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: FlatButton(
                   // heroTag: "go_ahead_truck",
                   onPressed: () {
-                    print(price);
                     if (price == null) {
                       Fluttertoast.showToast(msg: "Please select a truck");
                     } else {
-                      orderProvider.setOrderPrice(locationViewProvider, price);
+                      orderProvider.setOrderPrice(locationViewProvider, 1);
+
                       Navigator.pushNamed(context, '/orderdetailsscreen');
                     }
                   },

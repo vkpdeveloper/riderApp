@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +59,7 @@ class MyApp extends StatelessWidget {
               textTheme: GoogleFonts.openSansTextTheme(),
               primaryColor: ThemeColors.primaryColor,
               accentColor: Colors.white),
-          home: SplashScreen(),
-        ));
+          home: SplashScreen()));
+        
   }
 }
