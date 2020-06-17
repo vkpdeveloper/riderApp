@@ -18,6 +18,7 @@ class _TruckManagerState extends State<TruckManager> {
   TextEditingController _truckCapacityController = TextEditingController();
   TextEditingController _truckPriceFactorController = TextEditingController();
   TextEditingController _truckDimensionController = TextEditingController();
+  TextEditingController _truckImageURLController = TextEditingController();
 
   editDialog(Map<String, dynamic> data, String documentID) {
     return showDialog(
@@ -130,63 +131,75 @@ class _TruckManagerState extends State<TruckManager> {
                   "name": _truckNameController.text,
                   "capacity": _truckCapacityController.text,
                   "dimension": _truckDimensionController.text,
-                  "priceFactor": _truckPriceFactorController.text
+                  "priceFactor": _truckPriceFactorController.text,
+                  "image": _truckImageURLController.text
                 }).whenComplete(
                     () => Navigator.of(_scaffoldKey.currentContext).pop()),
                 child: Text("Done"),
               ),
             ],
             title: Text("Add New Truck"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _truckNameController,
-                  decoration: InputDecoration(
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      hintText: "Truck Name",
-                      labelText: "Truck Name"),
-                ),
-                TextField(
-                  controller: _truckCapacityController,
-                  decoration: InputDecoration(
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      hintText: "Truck Capacity",
-                      labelText: "Truck Capacity"),
-                ),
-                TextField(
-                  controller: _truckDimensionController,
-                  decoration: InputDecoration(
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      hintText: "Truck Dimension",
-                      labelText: "Truck Dimension"),
-                ),
-                TextField(
-                  controller: _truckPriceFactorController,
-                  decoration: InputDecoration(
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      hintText: "Price Factor",
-                      labelText: "Price Factor"),
-                ),
-                DropdownButton<String>(
-                  value: truckEditingProvider.getSelectedCategoty,
-                  onChanged: (val) {
-                    truckEditingProvider.setCategory(val);
-                  },
-                  isExpanded: true,
-                  items: truckEditingProvider.getAllCategories
-                      .map((String category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                )
-              ],
+            content: Container(
+              width: MediaQuery.of(context).size.width - 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _truckNameController,
+                    decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        hintText: "Truck Name",
+                        labelText: "Truck Name"),
+                  ),
+                  TextField(
+                    controller: _truckCapacityController,
+                    decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        hintText: "Truck Capacity",
+                        labelText: "Truck Capacity"),
+                  ),
+                  TextField(
+                    controller: _truckDimensionController,
+                    decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        hintText: "Truck Dimension",
+                        labelText: "Truck Dimension"),
+                  ),
+                  TextField(
+                    controller: _truckPriceFactorController,
+                    decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        hintText: "Price Factor",
+                        labelText: "Price Factor"),
+                  ),
+                  TextField(
+                    controller: _truckImageURLController,
+                    decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        hintText: "Truck Image",
+                        labelText: "Truck Image"),
+                  ),
+                  DropdownButton<String>(
+                    value: truckEditingProvider.getSelectedCategoty,
+                    onChanged: (val) {
+                      truckEditingProvider.setCategory(val);
+                    },
+                    isExpanded: true,
+                    items: truckEditingProvider.getAllCategories
+                        .map((String category) {
+                      return DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      );
+                    }).toList(),
+                  )
+                ],
+              ),
             ),
           );
         });

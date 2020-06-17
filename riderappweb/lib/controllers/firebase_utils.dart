@@ -147,14 +147,14 @@ class FirebaseUtils {
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
       "paymentMethod": orderProvider.getSelectedPaymentMethod,
-      "pickUpLatLng": {
-        "latitude": locationViewProvider.getPickUpLatLng.latitude,
-        "longitude": locationViewProvider.getPickUpLatLng.longitude
-      },
-      "destLatLng": {
-        "latitude": locationViewProvider.getDestinationLatLng.latitude,
-        "longitude": locationViewProvider.getDestinationLatLng.longitude
-      },
+      "pickUpLatLng": [
+        locationViewProvider.getPickUpLatLng.latitude,
+        locationViewProvider.getPickUpLatLng.longitude
+      ],
+      "destLatLng": [
+        locationViewProvider.getDestinationLatLng.latitude,
+        locationViewProvider.getDestinationLatLng.longitude
+      ],
       "addresses": [
         locationViewProvider.getPickUpPointAddress,
         locationViewProvider.getDestinationPointAddress
@@ -191,14 +191,14 @@ class FirebaseUtils {
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
       "paymentMethod": orderProvider.getSelectedPaymentMethod,
-      "pickUpLatLng": {
-        "latitude": locationViewProvider.getPickUpLatLng.latitude,
-        "longitude": locationViewProvider.getPickUpLatLng.longitude
-      },
-      "destLatLng": {
-        "latitude": locationViewProvider.getDestinationLatLng.latitude,
-        "longitude": locationViewProvider.getDestinationLatLng.longitude
-      },
+      "pickUpLatLng": [
+        locationViewProvider.getPickUpLatLng.latitude,
+        locationViewProvider.getPickUpLatLng.longitude
+      ],
+      "destLatLng": [
+        locationViewProvider.getDestinationLatLng.latitude,
+        locationViewProvider.getDestinationLatLng.longitude
+      ],
       "orderType": "OUTSTATION",
       "addresses": [
         locationViewProvider.getPickUpPointAddress,
@@ -238,14 +238,14 @@ class FirebaseUtils {
       "paymentMethod": orderProvider.getSelectedPaymentMethod,
       "riderUserID": snapshot.data['userID'],
       "riderPhone": snapshot.documentID,
-      "pickUpLatLng": {
-        "latitude": locationViewProvider.getPickUpLatLng.latitude,
-        "longitude": locationViewProvider.getPickUpLatLng.longitude
-      },
-      "destLatLng": {
-        "latitude": locationViewProvider.getDestinationLatLng.latitude,
-        "longitude": locationViewProvider.getDestinationLatLng.longitude
-      },
+      "pickUpLatLng": [
+        locationViewProvider.getPickUpLatLng.latitude,
+        locationViewProvider.getPickUpLatLng.longitude
+      ],
+      "destLatLng": [
+        locationViewProvider.getDestinationLatLng.latitude,
+        locationViewProvider.getDestinationLatLng.longitude
+      ],
       "addresses": [
         locationViewProvider.getPickUpPointAddress,
         locationViewProvider.getDestinationPointAddress
