@@ -81,11 +81,11 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                     .get()
                     .then((value) {
                   if (mounted) {
-                    if (value.data['riderPoint']['latitude'] != riderPosition) {
+                    if (value.data['riderPoint'][0] != riderPosition) {
                       setState(() {
                         riderPosition = LatLng(
-                            value.data['riderPoint']['latitude'],
-                            value.data['riderPoint']['longitude']);
+                            value.data['riderPoint'][0],
+                            value.data['riderPoint'][1]);
                         _markers
                             .removeWhere((m) => m.markerId.value == "riderPos");
                         CameraPosition riderCamera = CameraPosition(

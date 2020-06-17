@@ -155,7 +155,7 @@ class FirebaseUtils {
     Firestore.instance.collection('allOrders').document(orderid).updateData({
       "isStart": true,
       "isPicked": false,
-      "riderPoint": {"latitude": latLng.latitude, "longitude": latLng.longitude}
+      "riderPoint": [latLng.latitude, latLng.longitude]
     });
     controller.open();
     updateTimer = Timer.periodic(
@@ -166,7 +166,7 @@ class FirebaseUtils {
     Position latLng = await Geolocator().getCurrentPosition();
     print(latLng.latitude);
     Firestore.instance.collection('allOrders').document(orderid).updateData({
-      "riderPoint": {"latitude": latLng.latitude, "longitude": latLng.longitude}
+      "riderPoint": [latLng.latitude, latLng.longitude]
     });
   }
 

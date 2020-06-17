@@ -43,7 +43,8 @@ class AllBookings extends StatelessWidget {
                   children:
                       snapshot.data.documents.map((DocumentSnapshot document) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       child: Container(
                         child: Card(
                           elevation: 8.0,
@@ -69,7 +70,7 @@ class AllBookings extends StatelessWidget {
                                   Align(
                                     alignment: Alignment.topLeft,
                                     child: Text(
-                                      "Your Agent : ${document["riderPhone"]??"Asigning Driver..."}",
+                                      "Your Agent : ${document["riderPhone"] ?? "Asigning Driver..."}",
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black54),
@@ -114,12 +115,10 @@ class AllBookings extends StatelessWidget {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0)),
             onPressed: () {
-              LatLng pickUp = LatLng(document.data['riderPoint']['latitude'],
-                  document.data['riderPoint']['longitude']);
-              print(pickUp);
-              LatLng deskPoint = LatLng(document.data['destLatLng']['latitude'],
-                  document.data['destLatLng']['longitude']);
-              print(deskPoint);
+              LatLng pickUp = LatLng(document.data['riderPoint'][0],
+                  document.data['riderPoint'][1]);
+              LatLng deskPoint = LatLng(document.data['destLatLng'][0],
+                  document.data['destLatLng'][1]);
               Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -127,25 +126,6 @@ class AllBookings extends StatelessWidget {
                           orderID: document.data['orderID'],
                           pickUp: pickUp,
                           destPoint: deskPoint)));
-              // Map<String, LatLng> dataMap = {
-              //   "pickUpLatLng": LatLng(
-              //       document.data['pickUpLatLng']['latitude'],
-              //       document.data['pickUpLatLng']['latitude']),
-              //   "destLatLng": LatLng(document.data['destLatLng']['latitude'],
-              //       document.data['destLatLng']['latitude']),
-              // };
-              // LatLng pickUp = LatLng(document.data['pickUpLatLng']['latitude'],
-              //     document.data['pickUpLatLng']['latitude']);
-              // LatLng destPoint = LatLng(document.data['destLatLng']['latitude'],
-              //     document.data['destLatLng']['latitude']);
-              // Navigator.push(
-              //     context,
-              //     MaterialPageRoute(
-              //         builder: (context) => TrackOrderScreen(
-              //             orderID: document.data['orderID'],
-              //             dataMap: dataMap,
-              //             pickUp: pickUp,
-              //             destPoint: destPoint)));
             },
             color: ThemeColors.primaryColor,
             child: Text(

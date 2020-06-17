@@ -2,16 +2,13 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutterpaytm/flutterpaytm.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/orderprovider.dart';
 import 'package:rideapp/providers/user_provider.dart';
-import 'package:rideapp/views/ordersuccess_screen.dart';
 
 class FirebaseUtils {
   FirebaseAuth _auth = FirebaseAuth.instance;
@@ -155,14 +152,14 @@ class FirebaseUtils {
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
       "paymentMethod": paymentMethod,
-      "pickUpLatLng": {
-        "latitude": locationViewProvider.getPickUpLatLng.latitude,
-        "longitude": locationViewProvider.getPickUpLatLng.longitude
-      },
-      "destLatLng": {
-        "latitude": locationViewProvider.getDestinationLatLng.latitude,
-        "longitude": locationViewProvider.getDestinationLatLng.longitude
-      },
+      "pickUpLatLng": [
+        locationViewProvider.getPickUpLatLng.latitude,
+        locationViewProvider.getPickUpLatLng.longitude
+      ],
+      "destLatLng": [
+        locationViewProvider.getDestinationLatLng.latitude,
+        locationViewProvider.getDestinationLatLng.longitude
+      ],
       "addresses": [
         locationViewProvider.getPickUpPointAddress,
         locationViewProvider.getDestinationPointAddress
@@ -205,14 +202,14 @@ class FirebaseUtils {
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
       "paymentMethod": paymentMethod,
-      "pickUpLatLng": {
-        "latitude": locationViewProvider.getPickUpLatLng.latitude,
-        "longitude": locationViewProvider.getPickUpLatLng.longitude
-      },
-      "destLatLng": {
-        "latitude": locationViewProvider.getDestinationLatLng.latitude,
-        "longitude": locationViewProvider.getDestinationLatLng.longitude
-      },
+      "pickUpLatLng": [
+        locationViewProvider.getPickUpLatLng.latitude,
+        locationViewProvider.getPickUpLatLng.longitude
+      ],
+      "destLatLng": [
+        locationViewProvider.getDestinationLatLng.latitude,
+        locationViewProvider.getDestinationLatLng.longitude
+      ],
       "orderType": "OUTSTATION",
       "addresses": [
         locationViewProvider.getPickUpPointAddress,
@@ -258,14 +255,14 @@ class FirebaseUtils {
       "paymentMethod": paymentMethod,
       "riderUserID": snapshot.data['userID'],
       "riderPhone": snapshot.documentID,
-      "pickUpLatLng": {
-        "latitude": locationViewProvider.getPickUpLatLng.latitude,
-        "longitude": locationViewProvider.getPickUpLatLng.longitude
-      },
-      "destLatLng": {
-        "latitude": locationViewProvider.getDestinationLatLng.latitude,
-        "longitude": locationViewProvider.getDestinationLatLng.longitude
-      },
+      "pickUpLatLng": [
+        locationViewProvider.getPickUpLatLng.latitude,
+        locationViewProvider.getPickUpLatLng.longitude
+      ],
+      "destLatLng": [
+        locationViewProvider.getDestinationLatLng.latitude,
+        locationViewProvider.getDestinationLatLng.longitude
+      ],
       "addresses": [
         locationViewProvider.getPickUpPointAddress,
         locationViewProvider.getDestinationPointAddress

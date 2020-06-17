@@ -105,10 +105,10 @@ class _TrackOrderState extends State<HomeScreen> {
         .getDocuments();
     if (docs.documents.length == 1) {
       docs.documents.forEach((DocumentSnapshot doc) {
-        _pickUpLatLng = LatLng(doc.data['pickUpLatLng']['latitude'],
-            doc.data['pickUpLatLng']['longitude']);
-        _destinationLatLng = LatLng(doc.data['destLatLng']['latitude'],
-            doc.data['destLatLng']['longitude']);
+        _pickUpLatLng =
+            LatLng(doc.data['pickUpLatLng'][0], doc.data['pickUpLatLng'][0]);
+        _destinationLatLng =
+            LatLng(doc.data['destLatLng'][0], doc.data['destLatLng'][1]);
         _price = doc.data['price'];
         _distance = doc.data['distance'];
         _userName = doc.data['userName'];
@@ -159,7 +159,7 @@ class _TrackOrderState extends State<HomeScreen> {
   updatelocation() async {
     Position pause = await Geolocator().getCurrentPosition();
     Firestore.instance.collection('allOrders').document(orderid).updateData({
-      "riderPoint": {"latitude": pause.latitude, "longitude": pause.longitude}
+      "riderPoint": [pause.latitude, pause.longitude]
     });
   }
 
@@ -198,20 +198,13 @@ class _TrackOrderState extends State<HomeScreen> {
             child: Column(
               children: <Widget>[
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/profilescreen');
-                  },
-                  child: UserAccountsDrawerHeader(
-                    accountName: Text("Vaibhav pathak"),
-                    accountEmail: Text("Phone No or Email or other info"),
-                    currentAccountPicture: CircleAvatar(
-                      radius: 60,
-                      backgroundImage: NetworkImage(
-                          "https://vaibhavpathakofficial.tk/img/vaibhav.png"),
-                      backgroundColor: ThemeColors.primaryColor,
-                    ),
-                  ),
-                ),
+                    onTap: () {
+                      Navigator.pushNamed(context, '/profilescreen');
+                    },
+                    child: UserAccountsDrawerHeader(
+                      accountName: Text(userPreferences.getUserName),
+                      accountEmail: Text(userPreferences.getUserPhone),
+                    )),
                 ListTile(
                   onTap: () => Navigator.pushNamed(context, '/walletscreen'),
                   leading: Icon(Icons.account_balance_wallet,
@@ -616,7 +609,7 @@ class _TrackOrderState extends State<HomeScreen> {
                     value: userPreferences.getIsFree,
                     onChanged: (val) {
                       userPreferences.setIsFree(val);
-                      if (val = true){
+                      if (val = true) {
                         getOrderDetails();
                       }
                     },
@@ -715,23 +708,23 @@ class _TrackOrderState extends State<HomeScreen> {
           ),
           body: Center(
               child: Container(
-                height: 100,
-                width: 200,
-                child: Column(
-                  children: <Widget>[
-                    Text(
-            "No live orders !",
-            style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-          ),
-          MaterialButton(onPressed: (){
-            getOrderDetails();
-            
-          },
-          child: Text("Refresh"),
-          )
-                  ],
+            height: 100,
+            width: 200,
+            child: Column(
+              children: <Widget>[
+                Text(
+                  "No live orders !",
+                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
                 ),
-              )));
+                MaterialButton(
+                  onPressed: () {
+                    getOrderDetails();
+                  },
+                  child: Text("Refresh"),
+                )
+              ],
+            ),
+          )));
     }
   }
 }
