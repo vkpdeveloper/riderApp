@@ -93,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAddress = addressGet;
         _pickUpController.text = mainAddress;
       });
+      print(addressGet);
     } on PlatformException catch (e) {
       Fluttertoast.showToast(msg: "Error in getting address");
     }
@@ -306,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   leading: Icon(AntDesign.customerservice,
                       color: ThemeColors.primaryColor),
                   title: GestureDetector(
-                    onTap: () {},
+                    onTap: () => Navigator.pushNamed(context, '/support'),
                     child: Text(
                       "Support",
                       style: TextStyle(color: ThemeColors.primaryColor),
@@ -361,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
               BoxShadow(blurRadius: 10.0, color: Colors.grey.shade100)
             ],
             maxHeight: MediaQuery.of(context).size.height,
-            minHeight: (MediaQuery.of(context).size.height / 2) - 80,
+            minHeight: (MediaQuery.of(context).size.height / 2) - 40,
             panel: !isPanelOpenComplete
                 ? Container()
                 : Padding(
@@ -739,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMyLocation() {
     return Positioned(
-      bottom: (MediaQuery.of(context).size.height / 2 - 70),
+      bottom: (MediaQuery.of(context).size.height / 2 - 30),
       right: 10.0,
       child: FloatingActionButton(
         heroTag: "my_location_btn_home",
@@ -930,10 +931,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           )));
                         },
                         child: Container(
-                          height: 50,
+                          height: 40,
                           padding: const EdgeInsets.all(5.0),
                           width: (MediaQuery.of(context).size.width / 2) - 20,
-                          margin: const EdgeInsets.all(8.0),
+                          margin: const EdgeInsets.all(0.0),
                           decoration: BoxDecoration(
                               border: isLocalSelected
                                   ? Border.all(
@@ -978,7 +979,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           )));
                         },
                         child: Container(
-                          height: 50,
+                          height: 40,
                           width: (MediaQuery.of(context).size.width / 2) - 20,
                           margin: const EdgeInsets.all(8.0),
                           padding: const EdgeInsets.all(5.0),
@@ -1085,7 +1086,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             Positioned(
-              bottom: 10,
+              bottom: 0,
               right: 8.0,
               child: FlatButton(
                 // heroTag: "go_ahead_default",
@@ -1157,9 +1158,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: Stack(
+            overflow: Overflow.visible,
             children: [
               Container(
-                height: (MediaQuery.of(context).size.height / 2) - 100,
+                height: (MediaQuery.of(context).size.height / 2) - 50,
                 width: MediaQuery.of(context).size.width,
                 child: Column(
                   children: [
@@ -1168,9 +1170,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           horizontal: 0.0, vertical: 0.0),
                       child: Column(children: <Widget>[
                         Container(
-                          height: 80,
+                          height: 70,
                           padding:
-                              EdgeInsets.only(top: 10.0, right: 10, left: 10),
+                              EdgeInsets.only(top: 10.0, right: 10, left: 5),
                           decoration: BoxDecoration(
                             color: Colors.black26,
                             borderRadius: BorderRadius.circular(10.0),
@@ -1190,9 +1192,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   )
                                 ],
                               ),
-                              SizedBox(
-                                height: 05.0,
-                              ),
                               Row(
                                 children: [
                                   Icon(Octicons.primitive_dot,
@@ -1209,33 +1208,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 20.0),
-                        // TextField(
-                        //   style: TextStyle(color: Colors.black, fontSize: 16.0),
-                        //   keyboardType: TextInputType.number,
-                        //   decoration: InputDecoration(
-                        //       contentPadding: EdgeInsets.symmetric(
-                        //           vertical: 2.0, horizontal: 8.0),
-                        //       hintText: "Package weight (In KG)",
-                        //       border: OutlineInputBorder(
-                        //         borderSide:
-                        //             BorderSide(color: ThemeColors.primaryColor),
-                        //         borderRadius: BorderRadius.circular(10),
-                        //       )),
-                        // ),
-                        // SizedBox(
-                        //   height: 10.0,
-                        // ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(0, 15, 0, 0),
-                            child: Text("Select Truck Category"),
-                          ),
-                        ),
+                        SizedBox(height: 10,),
                         SizedBox(
-                          width: MediaQuery.of(context).size.width - 50,
+                          width: MediaQuery.of(context).size.width - 30,
                           child: DropdownButton<String>(
+                            hint: Text("Select Truck Category"),
                             isExpanded: true,
                             onChanged: (String value) {
                               print(value);
@@ -1259,7 +1236,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Positioned(
                 bottom: 0.0,
-                left: 0.0,
+                left: -15.0,
                 child: FlatButton(
                   // heroTag: "go_back_default",
                   onPressed: () => setState(() {
@@ -1285,7 +1262,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Positioned(
                 bottom: 0.0,
-                right: 0.0,
+                right: -15.0,
                 child: FlatButton(
                   onPressed: () =>
                       setState(() => _viewState = ViewState.TRUCKVIEW),
@@ -1305,480 +1282,344 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } else if (_viewState == ViewState.OUTSIDESTATION) {
-      return SafeArea(
-        child: Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          child: SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
-            primary: true,
-            child: Stack(
-              children: [
-                Container(
-                  height: (MediaQuery.of(context).size.height / 2) - 80,
-                  child: Column(children: [
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0, vertical: 0.0),
-                        child: Column(children: <Widget>[
-                          ClipRRect(
+      return SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        primary: true,
+        child: Stack(
+          children: [
+            Container(
+              height: (MediaQuery.of(context).size.height / 2) - 40,
+              child: Column(children: [
+                Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0, vertical: 0.0),
+                    child: Column(children: <Widget>[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10.0),
+                        child: Container(
+                          height: 70,
+                          padding: EdgeInsets.only(
+                              top: 10.0, right: 10, left: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black26,
                             borderRadius: BorderRadius.circular(10.0),
-                            child: Container(
-                              height: 80,
-                              padding: EdgeInsets.only(
-                                  top: 10.0, right: 10, left: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(10.0),
-                                // boxShadow: [
-                                //   BoxShadow(
-                                //       color: Colors.grey.shade100,
-                                //       blurRadius: 10.0,
-                                //       spreadRadius: 5.0)
-                                // ]
-                              ),
-                              child: Column(
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Icon(Octicons.primitive_dot,
-                                          color: Colors.green),
-                                      SizedBox(width: 10.0),
-                                      Flexible(
-                                        child: Text(
-                                          _pickUpController.text,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 05.0,
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(Octicons.primitive_dot,
-                                          color: Colors.red),
-                                      SizedBox(width: 10.0),
-                                      Flexible(
-                                        child: Text(
-                                          _destinationController.text,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      )
-                                    ],
-                                  ),
+                                  Icon(Octicons.primitive_dot,
+                                      color: Colors.green),
+                                  SizedBox(width: 10.0),
+                                  Flexible(
+                                    child: Text(
+                                      _pickUpController.text,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  )
                                 ],
                               ),
-                            ),
+                              Row(
+                                children: [
+                                  Icon(Octicons.primitive_dot,
+                                      color: Colors.red),
+                                  SizedBox(width: 10.0),
+                                  Flexible(
+                                    child: Text(
+                                      _destinationController.text,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ],
                           ),
-                          SizedBox(
-                            height: 15.0,
-                          ),
-                          TextField(
-                            style:
-                                TextStyle(color: Colors.black, fontSize: 16.0),
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                                hintText: "Your Estimated Price",
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: ThemeColors.primaryColor),
-                                  borderRadius: BorderRadius.circular(10),
-                                )),
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(0, 15, 0, 0),
-                              child: Text("Select Truck Category"),
-                            ),
-                          ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width - 50,
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              onChanged: (String value) {
-                                setState(() {
-                                  orderProvider.setTruckCategory(value);
-                                });
-                              },
-                              elevation: 5,
-                              value: orderProvider.getSelectedTruck,
-                              items: orderProvider.getTruckCategory
-                                  .map((String truck) {
-                                return DropdownMenuItem(
-                                  value: truck,
-                                  child: Text(truck),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ])),
-                  ]),
-                ),
-                Positioned(
-                  bottom: 35.0,
-                  left: 8.0,
-                  child: FlatButton(
-                    // heroTag: "go_back_default",
-                    onPressed: () => setState(() {
-                      _markers.removeWhere((element) =>
-                          element.markerId == MarkerId('pickmarker'));
-                      _markers.removeWhere((element) =>
-                          element.markerId == MarkerId('dropmarker'));
-                      _polyLines.removeWhere((element) =>
-                          element.polylineId == PolylineId('main'));
-                      _viewState = ViewState.DEFAULT;
-                      isShowMarker = true;
-                    }),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(Icons.arrow_back_ios),
-                        Text(
-                          "Back",
-                          style: TextStyle(fontSize: 15),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 35.0,
-                  right: 8.0,
-                  child: FlatButton(
-                    // heroTag: "go_ahead_truck",
-                    onPressed: () =>
-                        setState(() => _viewState = ViewState.TRUCKVIEW),
-                    child: Row(
-                      children: <Widget>[
-                        Text(
-                          "Next",
-                          style: TextStyle(fontSize: 15),
+                      ),
+                      SizedBox(
+                        height: 5.0,
+                      ),
+                      TextField(
+                        style:
+                            TextStyle(color: Colors.black, fontSize: 16.0),
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            hintText: "Your Estimated Price",
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: ThemeColors.primaryColor),
+                              borderRadius: BorderRadius.circular(10),
+                            )),
+                      ),
+                      SizedBox(height: 10,),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width - 30,
+                        child: DropdownButton<String>(
+                          hint: Text("Select Truck Category"),
+                          isExpanded: true,
+                          onChanged: (String value) {
+                            setState(() {
+                              orderProvider.setTruckCategory(value);
+                            });
+                          },
+                          elevation: 5,
+                          value: orderProvider.getSelectedTruck,
+                          items: orderProvider.getTruckCategory
+                              .map((String truck) {
+                            return DropdownMenuItem(
+
+                              value: truck,
+                              child: Text(truck),
+                            );
+                          }).toList(),
                         ),
-                        Icon(Icons.arrow_forward_ios),
-                      ],
-                    ),
-                  ),
-                )
-              ],
+                      ),
+                    ])),
+              ]),
             ),
-          ),
+            Positioned(
+              bottom: 0.0,
+              left: 0.0,
+              child: FlatButton(
+                // heroTag: "go_back_default",
+                onPressed: () => setState(() {
+                  _markers.removeWhere((element) =>
+                      element.markerId == MarkerId('pickmarker'));
+                  _markers.removeWhere((element) =>
+                      element.markerId == MarkerId('dropmarker'));
+                  _polyLines.removeWhere((element) =>
+                      element.polylineId == PolylineId('main'));
+                  _viewState = ViewState.DEFAULT;
+                  isShowMarker = true;
+                }),
+                child: Row(
+                  children: <Widget>[
+                    Icon(Icons.arrow_back_ios),
+                    Text(
+                      "Back",
+                      style: TextStyle(fontSize: 15),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0.0,
+              right: 0.0,
+              child: FlatButton(
+                // heroTag: "go_ahead_truck",
+                onPressed: () =>
+                    setState(() => _viewState = ViewState.TRUCKVIEW),
+                child: Row(
+                  children: <Widget>[
+                    Text(
+                      "Next",
+                      style: TextStyle(fontSize: 15),
+                    ),
+                    Icon(Icons.arrow_forward_ios),
+                  ],
+                ),
+              ),
+            )
+          ],
         ),
       );
     } else if (_viewState == ViewState.TRUCKVIEW) {
       print(orderProvider.getSelectedTruckLocal);
-      return SafeArea(
-        child: Container(
-          height: MediaQuery.of(context).size.height / 3,
-          width: MediaQuery.of(context).size.width,
-          child: SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
-            primary: true,
-            child: Stack(children: [
-              Center(
-                child: Container(
-                  height: MediaQuery.of(context).size.height / 2 - 100,
-                  child: StreamBuilder(
-                    stream: Firestore.instance
-                        .collection('trucks')
-                        .where("category",
-                            isEqualTo: orderProvider.getStationView ==
-                                    StationView.LOCAL
-                                ? orderProvider.getSelectedTruckLocal
-                                : orderProvider.getSelectedTruck)
-                        .snapshots(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<QuerySnapshot> snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(
-                            child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              ThemeColors.primaryColor),
-                        ));
-                      } else {
-                        if (snapshot.data.documents.length == 0) {
-                          return Center(
-                              child: Text("No Trucks of this category !"));
-                        }
-                        return Column(
-                          
-                          children: <Widget>[
-                            Container(
-                              height: 200,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                shrinkWrap: true,
-                                primary: true,
-                                physics: AlwaysScrollableScrollPhysics(),
-                                children: snapshot.data.documents
-                                    .map((DocumentSnapshot truck) {
-                                  int priceDemo = orderProvider.getOrderPrice;
-                                  return InkWell(
-                                    onTap: () {
-                                      setState(() => price = priceDemo);
-                                      orderProvider.setTruckName(truck.data['name']);
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
+      return SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        primary: true,
+        child: Stack(children: [
+          Center(
+            child: Container(
+              height: MediaQuery.of(context).size.height / 2 - 50,
+              child: StreamBuilder(
+                stream: Firestore.instance
+                    .collection('trucks')
+                    .where("category",
+                        isEqualTo: orderProvider.getStationView ==
+                                StationView.LOCAL
+                            ? orderProvider.getSelectedTruckLocal
+                            : orderProvider.getSelectedTruck)
+                    .snapshots(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                        child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          ThemeColors.primaryColor),
+                    ));
+                  } else {
+                    if (snapshot.data.documents.length == 0) {
+                      return Center(
+                          child: Text("No Trucks of this category !"));
+                    }
+                    return Column(
+                      children: <Widget>[
+                        Container(
+                          height: 200,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            shrinkWrap: true,
+                            primary: true,
+                            physics: AlwaysScrollableScrollPhysics(),
+                            children: snapshot.data.documents
+                                .map((DocumentSnapshot truck) {
+                              int priceDemo = orderProvider.getOrderPrice;
+                              return InkWell(
+                                onTap: () {
+                                  setState(() => price = priceDemo);
+                                  orderProvider
+                                      .setTruckName(truck.data['name']);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                      width: 200,
+                                      decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(15),
+                                          border: Border.all(
+                                              color: orderProvider
+                                                          .getTruckName ==
+                                                      truck.data['name']
+                                                  ? ThemeColors.primaryColor
+                                                  : Colors.white,
+                                              style: BorderStyle.solid,
+                                              width: 3),
+                                          boxShadow: [
+                                            BoxShadow(
+                                                blurRadius: 10,
+                                                color: Colors.grey.shade100,
+                                                spreadRadius: 4.0)
+                                          ]),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 10.0, vertical: 0.0),
                                       child: Container(
-                                          width: 200,
-                                          decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius: BorderRadius.circular(15),
-                                              border: Border.all(
-                                                  color: orderProvider.getTruckName ==
-                                                          truck.data['name']
-                                                      ? ThemeColors.primaryColor
-                                                      : Colors.white,
-                                                  style: BorderStyle.solid,
-                                                  width: 3),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    blurRadius: 10,
-                                                    color: Colors.grey.shade100,
-                                                    spreadRadius: 4.0)
-                                              ]),
-                                          margin: const EdgeInsets.symmetric(
-                                              horizontal: 10.0, vertical: 0.0),
-                                          child: Container(
-                                            child: Column(
-                                              children: <Widget>[
-                                                Text(
-                                                  ' ${truck.data['name']} ${truck.data['capacity']}',
-                                                  style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14.0),
-                                                ),
-                                                CachedNetworkImage(
-                                                  imageBuilder: (context, provider) {
-                                                    return Container(
-                                                        margin: EdgeInsets.symmetric(
-                                                            horizontal: 10),
-                                                        height: 80,
-                                                        width: 80,
-                                                        child: Image(
-                                                            image: provider,
-                                                            height: 100,
-                                                            width: 100));
-                                                  },
-                                                  imageUrl: truck.data['image'],
-                                                  placeholder: (context, str) {
-                                                    return Container(
-                                                      margin: EdgeInsets.symmetric(
-                                                          horizontal: 10),
-                                                      height: 100,
-                                                      width: 100,
-                                                      child: Image.asset(
-                                                          'asset/images/newlogo.png'),
-                                                    );
-                                                  },
-                                                ),
-                                                Text(
-                                                  "20 min away",
-                                                  style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14.0),
-                                                ),
-                                                Text(
-                                                  "  Size : ${truck.data['dimension']}",
-                                                  style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14.0),
-                                                ),
-                                                Text(
-                                                  "Estimated Fare :  ₹ ${priceDemo.toString()}",
-                                                  style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 18.0),
-                                                ),
-                                              ],
+                                        child: Column(
+                                          children: <Widget>[
+                                            Text(
+                                              ' ${truck.data['name']} ${truck.data['capacity']}',
+                                              style: TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                  fontSize: 14.0),
                                             ),
-                                          )),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ],
-                        );
-                      }
-                    },
-                  ),
-                ),
+                                            CachedNetworkImage(
+                                              imageBuilder:
+                                                  (context, provider) {
+                                                return Container(
+                                                    margin: EdgeInsets
+                                                        .symmetric(
+                                                            horizontal: 10),
+                                                    height: 80,
+                                                    width: 80,
+                                                    child: Image(
+                                                        image: provider,
+                                                        height: 100,
+                                                        width: 100));
+                                              },
+                                              imageUrl: truck.data['image'],
+                                              placeholder: (context, str) {
+                                                return Container(
+                                                  margin:
+                                                      EdgeInsets.symmetric(
+                                                          horizontal: 10),
+                                                  height: 100,
+                                                  width: 100,
+                                                  child: Image.asset(
+                                                      'asset/images/newlogo.png'),
+                                                );
+                                              },
+                                            ),
+                                            Text(
+                                              "20 min away",
+                                              style: TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                  fontSize: 14.0),
+                                            ),
+                                            Text(
+                                              "  Size : ${truck.data['dimension']}",
+                                              style: TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                  fontSize: 14.0),
+                                            ),
+                                            Text(
+                                              "Estimated Fare :  ₹ ${priceDemo.toString()}",
+                                              style: TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                  fontSize: 18.0),
+                                            ),
+                                          ],
+                                        ),
+                                      )),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                },
               ),
-              Positioned(
-                bottom: 20.0,
-                left: 8.0,
-                child: FlatButton(
-                  // heroTag: "go_back_default",
-                  onPressed: () {
-                    if (orderProvider.getStationView == StationView.LOCAL)
-                      setState(() => _viewState = ViewState.LOCALSTATION);
-                    else {
-                      setState(() => _viewState = ViewState.OUTSIDESTATION);
-                    }
-                  },
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.arrow_back_ios),
-                      Text(
-                        "Back",
-                        style: TextStyle(fontSize: 15),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 20.0,
-                right: 8.0,
-                child: FlatButton(
-                  // heroTag: "go_ahead_truck",
-                  onPressed: () {
-                    if (price == null) {
-                      Fluttertoast.showToast(msg: "Please select a truck");
-                    } else {
-                      orderProvider.setOrderPrice(locationViewProvider, 1);
-
-                      Navigator.pushNamed(context, '/orderdetailsscreen');
-                    }
-                  },
-                  child: Row(
-                    children: <Widget>[
-                      Text(
-                        "Next",
-                        style: TextStyle(fontSize: 15),
-                      ),
-                      Icon(Icons.arrow_forward_ios),
-                    ],
-                  ),
-                ),
-              )
-            ]),
+            ),
           ),
-        ),
-      );
-    } else if (true == false) {
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 10.0),
-          child: Stack(children: [
-            Center(
-              child: SingleChildScrollView(
-                child: Column(children: [
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      height: 120,
-                      width: MediaQuery.of(context).size.width - 20,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15.0),
-                          border: Border.all(
-                              color: ThemeColors.primaryColor, width: 5.0)),
-                      child: Row(
-                        children: [
-                          Container(
-                              height: 100,
-                              width: 100,
-                              child: Image.asset('asset/images/newlogo.png')),
-                          Text('Name of Truck 1'),
-                          Text("Price = 123"),
-                        ],
-                      ),
-                    ),
+          Positioned(
+            bottom: 0.0,
+            left: 0.0,
+            child: FlatButton(
+              // heroTag: "go_back_default",
+              onPressed: () {
+                if (orderProvider.getStationView == StationView.LOCAL)
+                  setState(() => _viewState = ViewState.LOCALSTATION);
+                else {
+                  setState(() => _viewState = ViewState.OUTSIDESTATION);
+                }
+              },
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.arrow_back_ios),
+                  Text(
+                    "Back",
+                    style: TextStyle(fontSize: 15),
                   ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      height: 120,
-                      width: MediaQuery.of(context).size.width - 20,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15.0),
-                          border: Border.all(
-                              color: Colors.transparent, width: 5.0)),
-                      child: Row(
-                        children: [
-                          Container(
-                              height: 100,
-                              width: 100,
-                              child: Image.asset('asset/images/newlogo.png')),
-                          Text('Name of Truck 1'),
-                          Text("Price = 123"),
-                        ],
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      height: 120,
-                      width: MediaQuery.of(context).size.width - 20,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15.0),
-                          border: Border.all(
-                              color: Colors.transparent, width: 5.0)),
-                      child: Row(
-                        children: [
-                          Container(
-                              height: 100,
-                              width: 100,
-                              child: Image.asset('asset/images/newlogo.png')),
-                          Text('Name of Truck 1'),
-                          Text("Price = 123"),
-                        ],
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      height: 120,
-                      width: MediaQuery.of(context).size.width - 20,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15.0),
-                          border: Border.all(
-                              color: Colors.transparent, width: 5.0)),
-                      child: Row(
-                        children: [
-                          Container(
-                              height: 100,
-                              width: 100,
-                              child: Image.asset('asset/images/newlogo.png')),
-                          Text('Name of Truck 1'),
-                          Text("Price = 123"),
-                        ],
-                      ),
-                    ),
-                  ),
-                ]),
+                ],
               ),
             ),
-            Positioned(
-              bottom: 10.0,
-              left: 8.0,
-              child: FloatingActionButton(
-                heroTag: "go_back_default",
-                onPressed: () =>
-                    setState(() => _viewState = ViewState.LOCALSTATION),
-                child: Icon(Icons.arrow_back_ios),
+          ),
+          Positioned(
+            bottom: 0.0,
+            right: 0.0,
+            child: FlatButton(
+              // heroTag: "go_ahead_truck",
+              onPressed: () {
+                if (price == null) {
+                  Fluttertoast.showToast(msg: "Please select a truck");
+                } else {
+                  orderProvider.setOrderPrice(locationViewProvider, 1);
+
+                  Navigator.pushNamed(context, '/orderdetailsscreen');
+                }
+              },
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    "Next",
+                    style: TextStyle(fontSize: 15),
+                  ),
+                  Icon(Icons.arrow_forward_ios),
+                ],
               ),
             ),
-            Positioned(
-              bottom: 10.0,
-              right: 8.0,
-              child: FloatingActionButton(
-                heroTag: "go_ahead_truck",
-                onPressed: () {},
-                child: Icon(Icons.arrow_forward_ios),
-              ),
-            )
-          ]),
-        ),
+          )
+        ]),
       );
     }
   }

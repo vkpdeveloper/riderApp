@@ -14,7 +14,7 @@ class OrderProvider with ChangeNotifier {
   StaticUtils _utils = StaticUtils();
   List<String> _trucksCategory = ["Mini (< 1 MT)", "Small (< 5 MT)", "Medium (5 - 15 MT)", "Large (15 - 40 MT)"];
   List<String> _trucksCategoryLocal = ["Mini (< 1 MT)", "Small (< 5 MT)", "Medium (5 - 15 MT)",];
-  String _selectedTruck = "Mini (< 1 MT)";
+  String _selectedTruck;
   String _selectedTruckLocal;
   StationView _stationView;
   int _selectedLocalView = 0;
@@ -27,7 +27,6 @@ class OrderProvider with ChangeNotifier {
     _receiverPhone = "";
     _truckName = "";
     _stationView = StationView.LOCAL;
-    _selectedTruckLocal = "Mini (< 1 MT)";
   }
 
   int get getSelectedPaymentMethod => _selectedPaymentMethod;

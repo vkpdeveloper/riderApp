@@ -1,6 +1,8 @@
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rideapp/constants/themecolors.dart';
@@ -228,57 +230,99 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 50,
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Container(
-                    child: MaterialButton(
-                        color: Colors.blue,
-                        child: Center(
-                            child: codeSent
-                                ? Text(
-                                    'Login',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18.0,
-                                        fontWeight: FontWeight.bold),
-                                  )
-                                : Text(
-                                    'Get Otp',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18.0,
-                                        fontWeight: FontWeight.bold),
-                                  )),
-                        onPressed: () {
-                          codeSent
-                              ? signInWithOTP(smsCode, verificationId)
-                              : verifyPhone(phoneNo);
-                        }),
-                  ),
-                ),
-              ),
-              Center(
-                child: RichText(
-                  text: TextSpan(
-                      text: "Or",
-                      style: TextStyle(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                          color: ThemeColors.primaryColor)),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 50.0, vertical: 10.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                 child: Column(
                   children: <Widget>[
-                    MaterialButton(
-                      color: Colors.red,
-                      onPressed: () {
-                        googleSignIn();
+                    Align(
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: <Widget>[
+                          codeSent
+                              ? ArgonButton(
+                                  height: 50,
+                                  roundLoadingShape: true,
+                                  width: MediaQuery.of(context).size.width * 0.6,
+                                  onTap: (startLoading, stopLoading, btnState) {
+                                    if (btnState == ButtonState.Idle) {
+                                      startLoading();
+                                      signInWithOTP(smsCode, verificationId);
+                                    } else {
+                                      stopLoading();
+                                    }
+                                  },
+                                  child: Text(
+                                    "Login",
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                  loader: Container(
+                                      padding: EdgeInsets.all(10),
+                                      child:
+                                          SpinKitDualRing(color: Colors.white24)),
+                                  borderRadius: 5.0,
+                                  color: Colors.blue,
+                                )
+                              : Container(),
+                              codeSent? Container(): ArgonButton(
+                                    height: 50,
+                                    roundLoadingShape: true,
+                                    width: MediaQuery.of(context).size.width * 0.6,
+                                    onTap: (startLoading, stopLoading, btnState) {
+                                      if (btnState == ButtonState.Idle) {
+                                        startLoading();
+                                        verifyPhone(phoneNo);
+                                      } else {
+                                        stopLoading();
+                                      }
+                                    },
+                                    child: Text(
+                                      "Get OTP",
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700),
+                                    ),
+                                    loader: Container(
+                                        padding: EdgeInsets.all(10),
+                                        child:
+                                            SpinKitDualRing(color: Colors.white24)
+                                        // SpinKitRotatingCircle(
+                                        //   color: Colors.white,
+                                        //   // size: loaderWidth ,
+                                        // ),
+                                        ),
+                                    borderRadius: 5.0,
+                                    color: Colors.blue,
+                                  )
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 10,),
+                    Center(
+                      child: RichText(
+                        text: TextSpan(
+                            text: "Or",
+                            style: TextStyle(
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                                color: ThemeColors.primaryColor)),
+                      ),
+                    ),
+                    SizedBox(height: 10,),
+                    ArgonButton(
+                      height: 50,
+                      roundLoadingShape: true,
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      onTap: (startLoading, stopLoading, btnState) {
+                        if (btnState == ButtonState.Idle) {
+                          startLoading();
+                          googleSignIn();
+                        } else {
+                          stopLoading();
+                        }
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -301,10 +345,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
+                      loader: Container(
+                          padding: EdgeInsets.all(10),
+                          child: SpinKitDualRing(color: Colors.white24)),
+                      borderRadius: 5.0,
+                      color: Colors.red,
                     ),
-                    MaterialButton(
-                      color: Colors.blue,
-                      onPressed: () {},
+                    SizedBox(height: 15,),
+                    ArgonButton(
+                      height: 50,
+                      roundLoadingShape: true,
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      onTap: (startLoading, stopLoading, btnState) {
+                        if (btnState == ButtonState.Idle) {
+                          startLoading();
+                        } else {
+                          stopLoading();
+                        }
+                      },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
@@ -326,6 +384,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
+                      loader: Container(
+                          padding: EdgeInsets.all(10),
+                          child: SpinKitDualRing(color: Colors.white24)),
+                      borderRadius: 5.0,
+                      color: Colors.blue,
                     ),
                   ],
                 ),
@@ -337,219 +400,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_icons/flutter_icons.dart';
-// import 'package:rideapp/constants/themecolors.dart';
-// import 'package:rideapp/views/otpscreen.dart';
-
-// class LoginScreen extends StatefulWidget {
-//   @override
-//   _LoginScreenState createState() => _LoginScreenState();
-// }
-
-// class _LoginScreenState extends State<LoginScreen> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return SafeArea(
-//       child: Scaffold(
-//         backgroundColor: Colors.white,
-//         body: Container(
-//           height: MediaQuery.of(context).size.height,
-//           width: MediaQuery.of(context).size.width,
-//           child: ListView(
-//             children: <Widget>[
-//               Stack(
-//                 overflow: Overflow.visible,
-//                 children: <Widget>[
-//                   Container(
-//                     width: MediaQuery.of(context).size.width,
-//                     height: MediaQuery.of(context).size.height / 3,
-//                     decoration: BoxDecoration(color: ThemeColors.primaryColor),
-//                   ),
-//                   Positioned(
-//                     bottom: 60,
-//                     left: 30,
-//                     child: Center(
-//                       child: Text(
-//                         "Login Using Phone Number",
-//                         style: TextStyle(
-//                             color: Colors.white,
-//                             fontWeight: FontWeight.bold,
-//                             fontSize: 18.0),
-//                       ),
-//                     ),
-//                   ),
-//                   Positioned(
-//                     child: Container(
-//                         width: (MediaQuery.of(context).size.width / 2) + 100,
-//                         child: Material(
-//                           elevation: 15.0,
-//                           color: Colors.white10,
-//                           shape: RoundedRectangleBorder(
-//                               borderRadius: BorderRadius.circular(20.0)),
-//                           shadowColor: ThemeColors.primaryColor,
-//                           child: TextField(
-//                             keyboardType: TextInputType.number,
-//                             decoration: InputDecoration(
-//                                 prefix: Text(
-//                                   "+91  ",
-//                                   style: TextStyle(
-//                                       color: Colors.white,
-//                                       fontWeight: FontWeight.bold),
-//                                 ),
-//                                 fillColor: ThemeColors.primaryColor,
-//                                 filled: true,
-//                                 focusedBorder: OutlineInputBorder(
-//                                     borderSide: BorderSide(color: Colors.white),
-//                                     borderRadius: BorderRadius.circular(20.0)),
-//                                 hintText: "Enter Mobile Number",
-//                                 hintStyle: TextStyle(color: Colors.white),
-//                                 labelStyle: TextStyle(color: Colors.white),
-//                                 labelText: "Mobile Number",
-//                                 border: OutlineInputBorder(
-//                                     borderRadius: BorderRadius.circular(20.0))),
-//                           ),
-//                         )),
-//                     bottom: -23,
-//                     left: 50,
-//                     right: 50,
-//                   )
-//                 ],
-//               ),
-//               SizedBox(
-//                 height: 50,
-//               ),
-//               Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 50.0),
-//                 child: Align(
-//                   alignment: Alignment.topRight,
-//                   child: Container(
-//                     child: FloatingActionButton(
-//                       onPressed: () => Navigator.push(
-//                           context,
-//                           MaterialPageRoute(
-//                               builder: (context) => OTPScreen(
-//                                     mobileNumber: "9984150296",
-//                                   ))),
-//                       mini: false,
-//                       tooltip: "Click to Login",
-//                       foregroundColor: Colors.white,
-//                       child: Icon(Icons.arrow_forward_ios),
-//                       backgroundColor: ThemeColors.primaryColor,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//               Center(
-//                 child: RichText(
-//                   text: TextSpan(
-//                       text: "Social Account Login",
-//                       style: TextStyle(
-//                           fontSize: 18.0,
-//                           fontWeight: FontWeight.bold,
-//                           color: ThemeColors.primaryColor)),
-//                 ),
-//               ),
-//               Padding(
-//                 padding: const EdgeInsets.symmetric(
-//                     horizontal: 30.0, vertical: 30.0),
-//                 child: Row(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: <Widget>[
-//                     GestureDetector(
-//                       onTap: () => print("Hello World"),
-//                       child: Container(
-//                           height: 50.0,
-//                           width: (MediaQuery.of(context).size.width / 2) - 50,
-//                           alignment: Alignment.center,
-//                           decoration: BoxDecoration(
-//                               boxShadow: [
-//                                 BoxShadow(
-//                                     blurRadius: 20.0,
-//                                     spreadRadius: 2.0,
-//                                     color: Colors.deepOrange.shade200)
-//                               ],
-//                               borderRadius: BorderRadius.circular(25.0),
-//                               gradient: LinearGradient(
-//                                   begin: Alignment.centerLeft,
-//                                   end: Alignment.centerRight,
-//                                   colors: [
-//                                     Colors.redAccent,
-//                                     Colors.deepOrange
-//                                   ])),
-//                           child: Row(
-//                             mainAxisAlignment: MainAxisAlignment.center,
-//                             children: <Widget>[
-//                               Icon(
-//                                 AntDesign.google,
-//                                 color: Colors.white,
-//                                 size: 25.0,
-//                               ),
-//                               SizedBox(
-//                                 width: 10.0,
-//                               ),
-//                               Text(
-//                                 "Google",
-//                                 overflow: TextOverflow.ellipsis,
-//                                 style: TextStyle(
-//                                     color: Colors.white,
-//                                     fontSize: 18.0,
-//                                     fontWeight: FontWeight.bold),
-//                               ),
-//                             ],
-//                           )),
-//                     ),
-//                     SizedBox(
-//                       width: 15.0,
-//                     ),
-//                     GestureDetector(
-//                       onTap: () => print("Hello World"),
-//                       child: Container(
-//                           height: 50.0,
-//                           width: (MediaQuery.of(context).size.width / 2) - 50,
-//                           alignment: Alignment.center,
-//                           decoration: BoxDecoration(
-//                               boxShadow: [
-//                                 BoxShadow(
-//                                     blurRadius: 20.0,
-//                                     spreadRadius: 2.0,
-//                                     color: Colors.lightBlue.shade200)
-//                               ],
-//                               borderRadius: BorderRadius.circular(25.0),
-//                               gradient: LinearGradient(
-//                                   begin: Alignment.centerLeft,
-//                                   end: Alignment.centerRight,
-//                                   colors: [Colors.lightBlue, Colors.blue])),
-//                           child: Row(
-//                             mainAxisAlignment: MainAxisAlignment.center,
-//                             children: <Widget>[
-//                               Icon(
-//                                 FontAwesome.facebook,
-//                                 color: Colors.white,
-//                                 size: 25.0,
-//                               ),
-//                               SizedBox(
-//                                 width: 10.0,
-//                               ),
-//                               Text(
-//                                 "Facebook",
-//                                 overflow: TextOverflow.ellipsis,
-//                                 style: TextStyle(
-//                                     color: Colors.white,
-//                                     fontSize: 18.0,
-//                                     fontWeight: FontWeight.bold),
-//                               ),
-//                             ],
-//                           )),
-//                     ),
-//                   ],
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }

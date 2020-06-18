@@ -120,6 +120,7 @@ class _TrackOrderState extends State<HomeScreen> {
         isPicked = doc.data['isPicked'];
         isDropped = doc.data['isDelivered'];
         _truckName = doc.data['truckName'];
+        _isOrderStarted = doc.data['isStart'];
         orderid = doc.documentID;
       });
       var permissions =

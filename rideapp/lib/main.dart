@@ -1,4 +1,6 @@
 
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -16,10 +18,17 @@ import 'package:rideapp/views/notifications.dart';
 import 'package:rideapp/views/orderdetailsscreen.dart';
 import 'package:rideapp/views/saveaddress_screen.dart';
 import 'package:rideapp/views/splashscreen.dart';
+import 'package:rideapp/views/supportscreen.dart';
 import 'package:rideapp/views/walletscreen.dart';
 import 'package:rideapp/views/profile_screen.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(
+  DevicePreview(
+    enabled: !kReleaseMode,
+    builder: (context) => 
+    MyApp()
+    )
+    );
 
 class MyApp extends StatelessWidget {
   @override
@@ -41,6 +50,9 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
+          locale: DevicePreview.of(context).locale, 
+
+          builder: DevicePreview.appBuilder,
           debugShowCheckedModeBanner: false,
           title: "Ride App",
           initialRoute: '/',
@@ -54,6 +66,7 @@ class MyApp extends StatelessWidget {
             '/orderdetailsscreen': (context) => OrderDetailsScreen(),
             '/profile': (context) => ProfileScreen(),
             '/notifications':(context)=> Notifications(),
+            '/support': (context)=> SupportScreen(),
           },
           theme: ThemeData(
               textTheme: GoogleFonts.openSansTextTheme(),
