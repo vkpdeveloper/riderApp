@@ -23,11 +23,9 @@ import 'package:rideapp/views/walletscreen.dart';
 import 'package:rideapp/views/profile_screen.dart';
 
 void main() => runApp(
-  DevicePreview(
-    enabled: !kReleaseMode,
-    builder: (context) => 
+  
     MyApp()
-    )
+    
     );
 
 class MyApp extends StatelessWidget {
@@ -50,10 +48,7 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
-          locale: DevicePreview.of(context).locale, 
-
-          builder: DevicePreview.appBuilder,
-          debugShowCheckedModeBanner: false,
+         debugShowCheckedModeBanner: false,
           title: "Ride App",
           initialRoute: '/',
           routes: {
