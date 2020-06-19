@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
@@ -16,9 +17,16 @@ class TrackOrderScreen extends StatefulWidget {
   final Map<String, dynamic> dataMap;
   final LatLng pickUp;
   final LatLng destPoint;
+  final LatLng driverPoint;
+  final String driverPhone;
 
   const TrackOrderScreen(
-      {Key key, this.orderID, this.dataMap, this.pickUp, this.destPoint})
+      {Key key,
+      this.orderID,
+      this.dataMap,
+      this.pickUp,
+      this.destPoint,
+      this.driverPoint, this.driverPhone})
       : super(key: key);
   @override
   _TrackOrderScreenState createState() => _TrackOrderScreenState();
@@ -27,10 +35,13 @@ class TrackOrderScreen extends StatefulWidget {
 class _TrackOrderScreenState extends State<TrackOrderScreen> {
   GoogleMapController _googleMapController;
   Set<Polyline> _polylines = {};
-  List<LatLng> allLats;
+  List<LatLng> pickUpToDrop;
+  List<LatLng> driverToPickUp;
   LatLng riderPosition;
   StaticUtils _utils = StaticUtils();
   BitmapDescriptor pinLocationIcon;
+  BitmapDescriptor dropLocationIcon;
+  String driverImage;
   final Set<Marker> _markers = {};
   GoogleMapPolyline _googleMapPolyline =
       GoogleMapPolyline(apiKey: APIKeys.googleMapsAPI);
@@ -48,7 +59,34 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
               destination: widget.destPoint,
               mode: RouteMode.driving);
       setState(() {
-        allLats = newLats;
+        pickUpToDrop = newLats;
+      });
+    }
+  }
+
+  void getDriverProfile() async {
+    DocumentSnapshot driverData = await Firestore.instance.collection('vendor').document(widget.driverPhone).get();
+    if(driverData.exists) {
+      setState(() {
+        driverImage = driverData['profile'];
+      });
+    }
+  }
+
+  void getDriverPolyLinePoints() async {
+    var permissions =
+        await Permission.getPermissionsStatus([PermissionName.Location]);
+    if (permissions[0].permissionStatus == PermissionStatus.notAgain) {
+      var askpermissions =
+          await Permission.requestPermissions([PermissionName.Location]);
+    } else {
+      List<LatLng> newLats =
+          await _googleMapPolyline.getCoordinatesWithLocation(
+              origin: widget.driverPoint,
+              destination: widget.pickUp,
+              mode: RouteMode.driving);
+      setState(() {
+        driverToPickUp = newLats;
       });
     }
   }
@@ -59,16 +97,25 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
     _utils.getBytesFromAsset('asset/images/markerCar.png', 124).then((value) {
       pinLocationIcon = BitmapDescriptor.fromBytes(value);
     });
+    _utils.getBytesFromAsset('asset/images/marker.png', 124).then((value) {
+      dropLocationIcon = BitmapDescriptor.fromBytes(value);
+    });
     getPolyLinePoints();
+    getDriverPolyLinePoints();
+    getDriverProfile();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios),
+              onPressed: () => Navigator.pop(context)),
           title: Text("Track Order"),
         ),
         body: SlidingUpPanel(
+            maxHeight: MediaQuery.of(context).size.height / 4,
             minHeight: MediaQuery.of(context).size.height / 4,
             panel: Container(
               color: Colors.white,
@@ -81,6 +128,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                   Positioned(
                     top: 20,
                     left: 20,
+                    
                     child: Container(
                       width: MediaQuery.of(context).size.width / 2,
                       child: Column(
@@ -122,18 +170,36 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                     top: (MediaQuery.of(context).size.height / 4) / 4,
                     right: 10.0,
                     child: Container(
-                      height: 100,
-                      width: 100,
-                      child: Image.asset(
-                        "asset/images/driverdefault.png",
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                      alignment: Alignment.center,
+                      height: 120,
+                      width: 120,
+                      child: driverImage != null ? CachedNetworkImage(
+                        imageUrl: driverImage,
+                        imageBuilder: (context, provider) {
+                          return Container(
+                            height: 120,
+                            padding: EdgeInsets.all(3),
+                            width:120,
+                            decoration: BoxDecoration(color: Colors.white, boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 14,
+                                spreadRadius: 3
+                              )
+                            ]),
+                            child: Image(image: provider, fit: BoxFit.cover),
+                          );
+                        },
+                        placeholder: (context, url) {
+                          return CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(ThemeColors.primaryColor),);
+                        },
+                      ) : CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(ThemeColors.primaryColor),)
+                  )
                   )
                 ],
               ),
             ),
-            body: allLats != null
+            body: pickUpToDrop != null && driverToPickUp != null
                 ? Stack(
                     children: <Widget>[
                       GoogleMap(
@@ -148,11 +214,11 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                         zoomGesturesEnabled: true,
                         initialCameraPosition: CameraPosition(
                             target: widget.pickUp,
-                            zoom: 16,
+                            zoom: 8,
                             bearing: 360.0,
                             tilt: 90.0),
                         onMapCreated: (GoogleMapController controller) async {
-                          Timer.periodic(Duration(minutes: 8), (timer) {
+                          Timer.periodic(Duration(seconds: 10), (timer) {
                             Firestore.instance
                                 .collection('allOrders')
                                 .document(widget.orderID)
@@ -188,25 +254,35 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                           });
                           setState(() {
                             _googleMapController = controller;
-                            riderPosition = widget.pickUp;
+                            riderPosition = widget.driverPoint;
                             _polylines.add(Polyline(
-                                polylineId: PolylineId('pickdroppoly'),
-                                color: Colors.purple,
-                                width: 10,
+                                polylineId: PolylineId('pickToDropPoly'),
+                                color: ThemeColors.primaryColor,
+                                width: 12,
+                                startCap: Cap.buttCap,
+                                endCap: Cap.roundCap,
                                 visible: true,
-                                points: allLats));
+                                points: pickUpToDrop));
+                            _polylines.add(Polyline(
+                                polylineId: PolylineId('driverToPickPoly'),
+                                color: ThemeColors.primaryColor,
+                                width: 12,
+                                startCap: Cap.buttCap,
+                                endCap: Cap.roundCap,
+                                visible: true,
+                                points: driverToPickUp));
                             _markers.add(Marker(
                               markerId: MarkerId("pickup"),
                               visible: true,
                               draggable: false,
-                              icon: BitmapDescriptor.defaultMarker,
+                              icon: dropLocationIcon,
                               position: widget.pickUp,
                             ));
                             _markers.add(Marker(
                               markerId: MarkerId("droppos"),
                               visible: true,
                               draggable: false,
-                              icon: BitmapDescriptor.defaultMarker,
+                              icon: dropLocationIcon,
                               position: widget.destPoint,
                             ));
                           });
@@ -214,6 +290,11 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                       ),
                     ],
                   )
-                : Expanded(child: Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(ThemeColors.primaryColor),)))));
+                : Expanded(
+                    child: Center(
+                        child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(ThemeColors.primaryColor),
+                  )))));
   }
 }

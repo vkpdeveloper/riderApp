@@ -10,7 +10,9 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Support")),
+      appBar: AppBar(title: Text("Support"), leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios),
+              onPressed: () => Navigator.pop(context)),),
       body: Column(
         children: <Widget>[
           ListTile(

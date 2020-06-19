@@ -25,6 +25,7 @@ import 'package:rideapp/providers/user_provider.dart';
 import 'package:rideapp/services/firebase_auth_service.dart';
 import 'package:rideapp/utils/uuid.dart';
 import 'package:rideapp/views/drop_location_screen.dart';
+import 'package:rideapp/views/orderdetailsscreen.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:http/http.dart' as http;
 
@@ -68,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int price;
   bool isShowMarker = true;
   Set<Marker> _markers = {};
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   getCurrentLocation() async {
     _pickUpController.text = "Fetching...";
@@ -80,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       Position pos = await Geolocator().getCurrentPosition();
-       http.Response res = await http.get(
+      http.Response res = await http.get(
           'https://maps.googleapis.com/maps/api/geocode/json?latlng=${pos.latitude},${pos.longitude}&key=${APIKeys.googleMapsAPI}');
       var data = jsonDecode(res.body);
       var addressGet = data['results'][0]['formatted_address'];
@@ -208,6 +210,11 @@ class _HomeScreenState extends State<HomeScreen> {
         origin: provider.getPickUpLatLng,
         destination: provider.getDestinationLatLng,
         mode: RouteMode.driving);
+  }
+
+  void resetPanel() {
+    _viewState = ViewState.DEFAULT;
+    //TODO reset order provider
   }
 
   @override
@@ -421,6 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     .setLocationView(
                                                         LocationView
                                                             .PICKUPSELECTED);
+                                                _pickFocusNode.requestFocus();
                                               },
                                               controller: _pickUpController,
                                               focusNode: _pickFocusNode,
@@ -428,7 +436,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   color:
                                                       ThemeColors.primaryColor,
                                                   fontSize: 16.0),
-                                              autofocus: true,
                                               decoration: InputDecoration(
                                                   icon: Icon(
                                                       Octicons.primitive_dot,
@@ -474,6 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 locationViewProvider
                                                     .setLocationView(LocationView
                                                         .DESTINATIONSELECTED);
+                                                _dropFocusNode.requestFocus();
                                               },
                                               controller:
                                                   _destinationController,
@@ -507,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             SizedBox(
                               height: 10,
                             ),
-                            if (_destinationController.text.isNotEmpty ||
+                            if (_destinationController.text.isNotEmpty &&
                                 _pickUpController.text.isNotEmpty)
                               Expanded(
                                 child: ListView(
@@ -749,7 +757,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 
   Widget _buildMenu() {
     return Positioned(
@@ -1156,7 +1163,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 10,),
+                        SizedBox(
+                          height: 10,
+                        ),
                         SizedBox(
                           width: MediaQuery.of(context).size.width - 30,
                           child: DropdownButton<String>(
@@ -1246,8 +1255,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(10.0),
                         child: Container(
                           height: 70,
-                          padding: EdgeInsets.only(
-                              top: 10.0, right: 10, left: 10),
+                          padding:
+                              EdgeInsets.only(top: 10.0, right: 10, left: 10),
                           decoration: BoxDecoration(
                             color: Colors.black26,
                             borderRadius: BorderRadius.circular(10.0),
@@ -1287,20 +1296,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(
                         height: 5.0,
                       ),
-                      TextField(
-                        style:
-                            TextStyle(color: Colors.black, fontSize: 16.0),
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                            hintText: "Your Estimated Price",
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                  color: ThemeColors.primaryColor),
-                              borderRadius: BorderRadius.circular(10),
-                            )),
-                      ),
-                      SizedBox(height: 10,),
                       SizedBox(
                         width: MediaQuery.of(context).size.width - 30,
                         child: DropdownButton<String>(
@@ -1316,7 +1311,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           items: orderProvider.getTruckCategory
                               .map((String truck) {
                             return DropdownMenuItem(
-
                               value: truck,
                               child: Text(truck),
                             );
@@ -1324,6 +1318,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ])),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    style: TextStyle(color: Colors.black, fontSize: 16.0),
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        hintText: "Your Estimated Price",
+                        border: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: ThemeColors.primaryColor),
+                          borderRadius: BorderRadius.circular(10),
+                        )),
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
               ]),
             ),
             Positioned(
@@ -1332,12 +1345,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: FlatButton(
                 // heroTag: "go_back_default",
                 onPressed: () => setState(() {
-                  _markers.removeWhere((element) =>
-                      element.markerId == MarkerId('pickmarker'));
-                  _markers.removeWhere((element) =>
-                      element.markerId == MarkerId('dropmarker'));
-                  _polyLines.removeWhere((element) =>
-                      element.polylineId == PolylineId('main'));
+                  _markers.removeWhere(
+                      (element) => element.markerId == MarkerId('pickmarker'));
+                  _markers.removeWhere(
+                      (element) => element.markerId == MarkerId('dropmarker'));
+                  _polyLines.removeWhere(
+                      (element) => element.polylineId == PolylineId('main'));
                   _viewState = ViewState.DEFAULT;
                   isShowMarker = true;
                 }),
@@ -1386,10 +1399,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 stream: Firestore.instance
                     .collection('trucks')
                     .where("category",
-                        isEqualTo: orderProvider.getStationView ==
-                                StationView.LOCAL
-                            ? orderProvider.getSelectedTruckLocal
-                            : orderProvider.getSelectedTruck)
+                        isEqualTo:
+                            orderProvider.getStationView == StationView.LOCAL
+                                ? orderProvider.getSelectedTruckLocal
+                                : orderProvider.getSelectedTruck)
                     .snapshots(),
                 builder: (BuildContext context,
                     AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -1415,10 +1428,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             physics: AlwaysScrollableScrollPhysics(),
                             children: snapshot.data.documents
                                 .map((DocumentSnapshot truck) {
-                              int priceDemo = orderProvider.getOrderPrice;
                               return InkWell(
                                 onTap: () {
-                                  setState(() => price = priceDemo);
+                                  print(truck.data['priceFactor']);
+                                  setState(() => price = truck.data['priceFactor']);
                                   orderProvider
                                       .setTruckName(truck.data['name']);
                                 },
@@ -1431,11 +1444,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                           borderRadius:
                                               BorderRadius.circular(15),
                                           border: Border.all(
-                                              color: orderProvider
-                                                          .getTruckName ==
-                                                      truck.data['name']
-                                                  ? ThemeColors.primaryColor
-                                                  : Colors.white,
+                                              color:
+                                                  orderProvider.getTruckName ==
+                                                          truck.data['name']
+                                                      ? ThemeColors.primaryColor
+                                                      : Colors.white,
                                               style: BorderStyle.solid,
                                               width: 3),
                                           boxShadow: [
@@ -1452,16 +1465,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                             Text(
                                               ' ${truck.data['name']} ${truck.data['capacity']}',
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 14.0),
                                             ),
                                             CachedNetworkImage(
                                               imageBuilder:
                                                   (context, provider) {
                                                 return Container(
-                                                    margin: EdgeInsets
-                                                        .symmetric(
+                                                    margin:
+                                                        EdgeInsets.symmetric(
                                                             horizontal: 10),
                                                     height: 80,
                                                     width: 80,
@@ -1473,9 +1485,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                               imageUrl: truck.data['image'],
                                               placeholder: (context, str) {
                                                 return Container(
-                                                  margin:
-                                                      EdgeInsets.symmetric(
-                                                          horizontal: 10),
+                                                  margin: EdgeInsets.symmetric(
+                                                      horizontal: 10),
                                                   height: 100,
                                                   width: 100,
                                                   child: Image.asset(
@@ -1486,22 +1497,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                             Text(
                                               "20 min away",
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 14.0),
                                             ),
                                             Text(
                                               "  Size : ${truck.data['dimension']}",
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 14.0),
                                             ),
                                             Text(
-                                              "Estimated Fare :  ₹ ${priceDemo.toString()}",
+                                              "Estimated Fare :  ₹ ${110.toString()}",
                                               style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 18.0),
                                             ),
                                           ],
@@ -1551,9 +1559,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (price == null) {
                   Fluttertoast.showToast(msg: "Please select a truck");
                 } else {
-                  orderProvider.setOrderPrice(locationViewProvider, 1);
-
-                  Navigator.pushNamed(context, '/orderdetailsscreen');
+                  if (orderProvider.getStationView == StationView.LOCAL) {
+                    setState(() => _viewState = ViewState.ORDERVIEW);
+                    orderProvider.setOrderPrice(locationViewProvider, price);
+                  } else if (orderProvider.getStationView ==
+                      StationView.OUTSIDE) {
+                    Fluttertoast.showToast(
+                        msg: "Order Received we will contact you soon");
+                    //TODO add booking
+                    setState(() {
+                      resetPanel();
+                    });
+                  }
                 }
               },
               child: Row(
@@ -1567,6 +1584,201 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           )
+        ]),
+      );
+    } else if (_viewState == ViewState.ORDERVIEW) {
+      return SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        primary: true,
+        child: Stack(children: [
+          Center(
+            child: Container(
+                height: MediaQuery.of(context).size.height / 2 - 50,
+                child: Column(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10.0, horizontal: 15.0),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Text("Receiver Details",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: ThemeColors.primaryColor,
+                                fontSize: 15.0)),
+                      ),
+                    ),
+                    SizedBox(height: 10.0),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      child: Form(
+                        key: formKey,
+                        child: Column(
+                          children: <Widget>[
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 0.0),
+                              child: TextFormField(
+                                validator: (val) {
+                                  if (val.length < 3) {
+                                    return "Invalid Name";
+                                  }
+                                },
+                                onSaved: (val) {
+                                  orderProvider.setReceiverName(val);
+                                },
+                                keyboardType: TextInputType.text,
+                                decoration: InputDecoration(
+                                    hintText: "Receiver Name",
+                                    prefixIcon: Icon(Icons.person_outline),
+                                    border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0))),
+                              ),
+                            ),
+                            SizedBox(height: 15),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 0.0),
+                              child: TextFormField(
+                                validator: (val) {
+                                  if (val.length != 10) {
+                                    return "Invalid Phone Number";
+                                  }
+                                },
+                                onSaved: (val) {
+                                  orderProvider.setReceiverPhone(val);
+                                },
+                                keyboardType: TextInputType.number,
+                                maxLength: 10,
+                                decoration: InputDecoration(
+                                    hintText: "Receiver Phone",
+                                    prefixIcon: Icon(Icons.dialpad),
+                                    border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0))),
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.topLeft,
+                              child: Text("Select Payment Method",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: ThemeColors.primaryColor,
+                                      fontSize: 15.0)),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: <Widget>[
+                                Row(
+                                  children: <Widget>[
+                                    Radio(
+                                      activeColor: ThemeColors.primaryColor,
+                                      onChanged: (val) {
+                                        orderProvider.setPaymentMethod(val);
+                                      },
+                                      value: 0,
+                                      groupValue: orderProvider
+                                          .getSelectedPaymentMethod,
+                                    ),
+                                    Text("Paytm"),
+                                  ],
+                                ),
+                                Row(
+                                  children: <Widget>[
+                                    Radio(
+                                      activeColor: ThemeColors.primaryColor,
+                                      onChanged: (val) {
+                                        orderProvider.setPaymentMethod(val);
+                                      },
+                                      value: 1,
+                                      groupValue: orderProvider
+                                          .getSelectedPaymentMethod,
+                                    ),
+                                    Text("UPI"),
+                                  ],
+                                ),
+                                Row(
+                                  children: <Widget>[
+                                    Radio(
+                                      activeColor: ThemeColors.primaryColor,
+                                      onChanged: (val) {
+                                        orderProvider.setPaymentMethod(val);
+                                      },
+                                      value: 2,
+                                      groupValue: orderProvider
+                                          .getSelectedPaymentMethod,
+                                    ),
+                                    Text("Cash"),
+                                  ],
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )),
+          ),
+          Positioned(
+            bottom: 0.0,
+            left: 0.0,
+            child: FlatButton(
+              // heroTag: "go_back_default",
+              onPressed: () {
+                setState(() => _viewState = ViewState.TRUCKVIEW);
+              },
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.arrow_back_ios),
+                  Text(
+                    "Back",
+                    style: TextStyle(fontSize: 15),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+              bottom: 0.0,
+              right: 10.0,
+              child: GestureDetector(
+                  onTap: () {
+                    if (formKey.currentState.validate()) {
+                      formKey.currentState.save();
+                      FocusScope.of(context).unfocus();
+                      orderProvider.setOrderPrice(locationViewProvider, price);
+                      print(orderProvider.getOrderPrice);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => OrderDetailsScreen()));
+                    }
+                  },
+                  child: Container(
+                    alignment: Alignment.center,
+                    height: 45,
+                    width: 180,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [
+                          ThemeColors.primaryColor,
+                          Color(0xff8E2DE2)
+                        ]),
+                        borderRadius: BorderRadius.circular(15.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: ThemeColors.primaryColor.withOpacity(0.2),
+                            blurRadius: 10.0,
+                            spreadRadius: 2.0,
+                          )
+                        ]),
+                    child: Text(
+                      "Checkout",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  )))
         ]),
       );
     }

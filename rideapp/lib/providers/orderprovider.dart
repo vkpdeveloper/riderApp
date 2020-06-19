@@ -90,6 +90,7 @@ class OrderProvider with ChangeNotifier {
         provider.getPickUpLatLng, provider.getDestinationLatLng);
     print(_totalDistance);
     _orderPrice = ((_totalDistance) * priceFactor).round();
+    print(_orderPrice);
     notifyListeners();
   }
 

@@ -154,6 +154,8 @@ class FirebaseUtils {
       UserPreferences userPreferences,
       BuildContext context) {
     DateTime currentDate = new DateTime.now();
+    String pin = currentDate.millisecondsSinceEpoch.toString().substring(4, 10);
+    print(pin);
     String paymentMethod = "";
     if (orderProvider.getSelectedPaymentMethod == 0) paymentMethod = "Paytm";
     if (orderProvider.getSelectedPaymentMethod == 1)
@@ -161,8 +163,7 @@ class FirebaseUtils {
     if (orderProvider.getSelectedPaymentMethod == 2) paymentMethod = "Cash";
     String orderID =
         "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
-    print(orderID);
-    Map<String, dynamic> orderData = {
+      Map<String, dynamic> orderData = {
       "orderID": orderID,
       "userID": userPreferences.getUserID,
       "userToken": userPreferences.getUserToken,
@@ -170,6 +171,7 @@ class FirebaseUtils {
       "userPhone": userPreferences.getUserPhone,
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
+      "pickUpPin": pin,
       "paymentMethod": paymentMethod,
       "pickUpLatLng": [
         locationViewProvider.getPickUpLatLng.latitude,
@@ -203,12 +205,14 @@ class FirebaseUtils {
       ProgressDialog dialog,
       UserPreferences userPreferences,
       BuildContext context) {
+        
     String paymentMethod = "";
     if (orderProvider.getSelectedPaymentMethod == 0) paymentMethod = "Paytm";
     if (orderProvider.getSelectedPaymentMethod == 1)
       paymentMethod = "CC or DC Card";
     if (orderProvider.getSelectedPaymentMethod == 2) paymentMethod = "Cash";
     DateTime currentDate = new DateTime.now();
+    String pin = currentDate.millisecond.toString().substring(4, 10);
 
     String orderID =
         "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
@@ -217,6 +221,7 @@ class FirebaseUtils {
       "userID": userPreferences.getUserID,
       "userToken": userPreferences.getUserToken,
       "userName": userPreferences.getUserName,
+      "pickUpPin": pin,
       "userPhone": userPreferences.getUserPhone,
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,
@@ -260,6 +265,7 @@ class FirebaseUtils {
       paymentMethod = "CC or DC Card";
     if (orderProvider.getSelectedPaymentMethod == 2) paymentMethod = "Cash";
     DateTime currentDate = new DateTime.now();
+    String pin = currentDate.millisecond.toString().substring(4, 10);
     String orderID =
         "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
     print(orderID);
@@ -268,6 +274,7 @@ class FirebaseUtils {
       "userID": userPreferences.getUserID,
       "userToken": userPreferences.getUserToken,
       "userName": userPreferences.getUserName,
+      "pickUpPin": pin,
       "userPhone": userPreferences.getUserPhone,
       "receiverName": orderProvider.getReceiverName,
       "receiverPhone": orderProvider.getReceiverPhone,

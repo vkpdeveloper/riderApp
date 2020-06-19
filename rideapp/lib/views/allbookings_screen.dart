@@ -130,7 +130,10 @@ class AllBookings extends StatelessWidget {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0)),
             onPressed: () {
-              LatLng pickUp = LatLng(document.data['riderPoint'][0],
+              String riderPhone = document.data['riderPhone'];
+              LatLng pickUp = LatLng(document.data['pickUpLatLng'][0],
+                  document.data['pickUpLatLng'][1]);
+              LatLng driverPoint = LatLng(document.data['riderPoint'][0],
                   document.data['riderPoint'][1]);
               LatLng deskPoint = LatLng(document.data['destLatLng'][0],
                   document.data['destLatLng'][1]);
@@ -141,6 +144,8 @@ class AllBookings extends StatelessWidget {
                           orderID: document.data['orderID'],
                           dataMap: document.data,
                           pickUp: pickUp,
+                          driverPhone: riderPhone,
+                          driverPoint: driverPoint,
                           destPoint: deskPoint)));
             },
             color: ThemeColors.primaryColor,
