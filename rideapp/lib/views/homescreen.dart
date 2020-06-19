@@ -80,11 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       Position pos = await Geolocator().getCurrentPosition();
-
-      // List<Address> allAddresses = await Geocoder.local
-      //     .findAddressesFromCoordinates(
-      //         Coordinates(pos.latitude, pos.longitude));
-      http.Response res = await http.get(
+       http.Response res = await http.get(
           'https://maps.googleapis.com/maps/api/geocode/json?latlng=${pos.latitude},${pos.longitude}&key=${APIKeys.googleMapsAPI}');
       var data = jsonDecode(res.body);
       var addressGet = data['results'][0]['formatted_address'];
@@ -754,54 +750,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Widget _buildSearch(BuildContext context) {
-  //   return Positioned(
-  //     top: 40,
-  //     left: 20,
-  //     right: 20,
-  //     height: 60,
-  //     child: Container(
-  //       width: MediaQuery.of(context).size.width,
-  //       height: 60.0,
-  //       decoration: BoxDecoration(
-  //           borderRadius: BorderRadius.circular(10.0),
-  //           color: Colors.white,
-  //           boxShadow: [
-  //             BoxShadow(color: Colors.grey.shade100, blurRadius: 14.0)
-  //           ]),
-  //       child: Row(
-  //         crossAxisAlignment: CrossAxisAlignment.center,
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: <Widget>[
-  //           IconButton(
-  //             icon: Icon(Icons.menu),
-  //             onPressed: () => _scaffoldKey.currentState.openDrawer(),
-  //             color: ThemeColors.primaryColor,
-  //           ),
-  //           Expanded(
-  //             child: TextField(
-  //               focusNode: _mainFocusNode,
-  //               onTap: () {
-  //                 _mainFocusNode.unfocus();
-  //                 _pickFocusNode.requestFocus();
-  //                 _controller.open();
-  //               },
-  //               style:
-  //                   TextStyle(color: ThemeColors.primaryColor, fontSize: 16.0),
-  //               decoration: InputDecoration(
-  //                   filled: true,
-  //                   fillColor: Colors.white,
-  //                   hintText: "Your Current Location",
-  //                   border: OutlineInputBorder(
-  //                       borderRadius: BorderRadius.circular(10),
-  //                       borderSide: BorderSide.none)),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildMenu() {
     return Positioned(

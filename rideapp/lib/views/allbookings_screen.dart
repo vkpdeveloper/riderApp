@@ -54,15 +54,30 @@ class AllBookings extends StatelessWidget {
                               padding: const EdgeInsets.all(15.0),
                               child: Column(
                                 children: <Widget>[
-                                  Align(
-                                    alignment: Alignment.topLeft,
-                                    child: Text(
-                                      "Order ID : ${document["orderID"]}",
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16.0),
-                                    ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: <Widget>[
+                                      Align(
+                                        alignment: Alignment.topLeft,
+                                        child: Text(
+                                          "Order ID : ${document["orderID"]}",
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16.0),
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: Text(
+                                          "Price : ₹ ${document.data['price']}",
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16.0),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   SizedBox(
                                     height: 10.0,
@@ -124,6 +139,7 @@ class AllBookings extends StatelessWidget {
                   MaterialPageRoute(
                       builder: (context) => TrackOrderScreen(
                           orderID: document.data['orderID'],
+                          dataMap: document.data,
                           pickUp: pickUp,
                           destPoint: deskPoint)));
             },

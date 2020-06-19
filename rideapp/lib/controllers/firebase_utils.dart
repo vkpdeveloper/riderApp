@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/orderprovider.dart';
@@ -23,6 +24,24 @@ class FirebaseUtils {
       Firestore.instance.collection('allOrders');
 
   FirebaseMessaging _messaging = FirebaseMessaging();
+
+  Future<bool> getuserexistence(String phone) async {
+    final snapShot =
+        await Firestore.instance.collection('users').document(phone).get();
+    if (snapShot == null || !snapShot.exists) {
+      return false;
+    }
+    return true;
+  }
+
+
+  Future<bool> isUserExist() async {
+    FirebaseUser user = await getCurrentUser();
+    final snapShot =
+        await Firestore.instance.collection('user').document(user.uid).get();
+       return  snapShot.exists;
+
+  }
 
   Future<bool> getLoggedIn() async {
     try {

@@ -30,3 +30,6 @@ shared_preferences=/Users/sid/Documents/flutter/.pub-cache/hosted/pub.dartlang.o
 shared_preferences_macos=/Users/sid/Documents/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_macos-0.0.1+10/
 shared_preferences_web=/Users/sid/Documents/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_web-0.1.2+7/
 sqflite=/Users/sid/Documents/flutter/.pub-cache/hosted/pub.dartlang.org/sqflite-1.3.0+1/
+url_launcher=/Users/sid/Documents/flutter/.pub-cache/hosted/pub.dartlang.org/url_launcher-5.4.11/
+url_launcher_macos=/Users/sid/Documents/flutter/.pub-cache/hosted/pub.dartlang.org/url_launcher_macos-0.0.1+7/
+url_launcher_web=/Users/sid/Documents/flutter/.pub-cache/hosted/pub.dartlang.org/url_launcher_web-0.1.1+6/

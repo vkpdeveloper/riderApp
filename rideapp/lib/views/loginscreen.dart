@@ -1,4 +1,5 @@
 import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
@@ -7,7 +8,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rideapp/constants/themecolors.dart';
 import 'package:rideapp/controllers/firebase_utils.dart';
-import 'package:rideapp/views/emailandPassword_login.dart';
 import 'package:rideapp/widgets/otp_input.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -37,10 +37,17 @@ class _LoginScreenState extends State<LoginScreen> {
   signInWithOTP(smsCode, verId) async {
     AuthCredential authCreds = PhoneAuthProvider.getCredential(
         verificationId: verId, smsCode: smsCode);
+
     FirebaseUser _user = await signIn(authCreds);
+
     if (_user != null) {
       print(_user.uid);
-      Navigator.pushReplacementNamed(context, '/customerscreen');
+      if (await _utils.isUserExist()) {
+        Navigator.pushReplacementNamed(context, '/homescreen');
+      } else {
+        Navigator.pushReplacementNamed(context, '/customerscreen');
+      }
+      // Navigator.pushReplacementNamed(context, '/customerscreen');
     }
   }
 
@@ -49,8 +56,11 @@ class _LoginScreenState extends State<LoginScreen> {
         (AuthCredential authResult) async {
       FirebaseUser _user = await signIn(authResult);
       if (_user != null) {
-        print(_user.uid);
-        Navigator.pushReplacementNamed(context, '/customerscreen');
+        if (await _utils.isUserExist()) {
+          Navigator.pushReplacementNamed(context, '/homescreen');
+        } else {
+          Navigator.pushReplacementNamed(context, '/customerscreen');
+        }
       }
     };
 
@@ -93,7 +103,11 @@ class _LoginScreenState extends State<LoginScreen> {
     _user = result.user;
     print(_user.uid);
     _utils.saveGoogleLoginData();
-    Navigator.pushReplacementNamed(context, '/homescreen');
+    if (await _utils.isUserExist()) {
+      Navigator.pushReplacementNamed(context, '/homescreen');
+    } else {
+      Navigator.pushReplacementNamed(context, '/customerscreen');
+    }
   }
 
   GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -128,6 +142,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     width: _width,
                     height: _height / 1.8,
+                    child: Center(
+                        child: Container(
+                      height: 220,
+                      width: 220,
+                      child: Image.asset('asset/images/newlogo.png'),
+                    )),
                     decoration: BoxDecoration(color: ThemeColors.primaryColor),
                   ),
                   Positioned(
@@ -242,7 +262,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ? ArgonButton(
                                   height: 50,
                                   roundLoadingShape: true,
-                                  width: MediaQuery.of(context).size.width * 0.6,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.6,
                                   onTap: (startLoading, stopLoading, btnState) {
                                     if (btnState == ButtonState.Idle) {
                                       startLoading();
@@ -260,47 +281,47 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   loader: Container(
                                       padding: EdgeInsets.all(10),
-                                      child:
-                                          SpinKitDualRing(color: Colors.white24)),
+                                      child: SpinKitDualRing(
+                                          color: Colors.white24)),
                                   borderRadius: 5.0,
                                   color: Colors.blue,
                                 )
                               : Container(),
-                              codeSent? Container(): ArgonButton(
-                                    height: 50,
-                                    roundLoadingShape: true,
-                                    width: MediaQuery.of(context).size.width * 0.6,
-                                    onTap: (startLoading, stopLoading, btnState) {
-                                      if (btnState == ButtonState.Idle) {
-                                        startLoading();
-                                        verifyPhone(phoneNo);
-                                      } else {
-                                        stopLoading();
-                                      }
-                                    },
-                                    child: Text(
-                                      "Get OTP",
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700),
-                                    ),
-                                    loader: Container(
-                                        padding: EdgeInsets.all(10),
-                                        child:
-                                            SpinKitDualRing(color: Colors.white24)
-                                        // SpinKitRotatingCircle(
-                                        //   color: Colors.white,
-                                        //   // size: loaderWidth ,
-                                        // ),
-                                        ),
-                                    borderRadius: 5.0,
-                                    color: Colors.blue,
-                                  )
+                          codeSent
+                              ? Container()
+                              : ArgonButton(
+                                  height: 50,
+                                  roundLoadingShape: true,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.6,
+                                  onTap: (startLoading, stopLoading, btnState) {
+                                    if (btnState == ButtonState.Idle) {
+                                      startLoading();
+                                      verifyPhone(phoneNo);
+                                    } else {
+                                      stopLoading();
+                                    }
+                                  },
+                                  child: Text(
+                                    "Get OTP",
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                  loader: Container(
+                                      padding: EdgeInsets.all(10),
+                                      child: SpinKitDualRing(
+                                          color: Colors.white24)),
+                                  borderRadius: 5.0,
+                                  color: Colors.blue,
+                                )
                         ],
                       ),
                     ),
-                    SizedBox(height: 10,),
+                    SizedBox(
+                      height: 10,
+                    ),
                     Center(
                       child: RichText(
                         text: TextSpan(
@@ -311,7 +332,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: ThemeColors.primaryColor)),
                       ),
                     ),
-                    SizedBox(height: 10,),
+                    SizedBox(
+                      height: 10,
+                    ),
                     ArgonButton(
                       height: 50,
                       roundLoadingShape: true,
@@ -351,7 +374,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: 5.0,
                       color: Colors.red,
                     ),
-                    SizedBox(height: 15,),
+                    SizedBox(
+                      height: 15,
+                    ),
                     ArgonButton(
                       height: 50,
                       roundLoadingShape: true,
