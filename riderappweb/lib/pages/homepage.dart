@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_maps/flutter_google_maps.dart';
 import 'package:flutter_google_maps/flutter_google_maps.dart' as map;
@@ -9,13 +11,16 @@ import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:riderappweb/constants/apikeys.dart';
 import 'package:riderappweb/constants/themecolors.dart';
+import 'package:riderappweb/controllers/firebase_utils.dart';
 import 'package:riderappweb/enums/devices_view.dart';
 import 'package:riderappweb/enums/location_view.dart';
 import 'package:riderappweb/enums/station_view.dart';
+import 'package:riderappweb/enums/viewstate.dart';
 import 'package:riderappweb/model/location_details.dart';
 import 'package:riderappweb/model/location_result.dart';
 import 'package:riderappweb/providers/location_provider.dart';
 import 'package:riderappweb/providers/order_provider.dart';
+import 'package:riderappweb/providers/user_provider.dart';
 import 'package:riderappweb/utils/uuid.dart';
 
 class HomePage extends StatefulWidget {
@@ -34,7 +39,9 @@ class _HomePageState extends State<HomePage> {
   TextEditingController _dropController = TextEditingController();
   bool isArrowClicked = false;
   DeviceView deviceView;
+  GlobalKey<FormState> _receiverFormKey = GlobalKey<FormState>();
   Timer _debounce;
+  int price;
   bool hasSearchTerm = false;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String sessionToken = Uuid().generateV4();
@@ -44,6 +51,10 @@ class _HomePageState extends State<HomePage> {
   bool isSearchingCurrently = false;
   GlobalKey<FormState> _locationFormKey = GlobalKey<FormState>();
   GlobalKey<GoogleMapStateBase> _googleMapKey = GlobalKey<GoogleMapStateBase>();
+  ViewState _viewState = ViewState.DEFAULT;
+  TextEditingController _receiverName = TextEditingController();
+  TextEditingController _receiverPhone = TextEditingController();
+  FirebaseUtils _firebaseUtils = FirebaseUtils();
 
   getCurrentLocation() async {
     LocationData locData = await Location.instance.getLocation();
@@ -169,6 +180,7 @@ class _HomePageState extends State<HomePage> {
     LocationViewProvider locationViewProvider =
         Provider.of<LocationViewProvider>(context);
     OrderProvider orderProvider = Provider.of<OrderProvider>(context);
+    UserPreferences userPreferences = Provider.of<UserPreferences>(context);
 
     checkDevice();
 
@@ -228,7 +240,8 @@ class _HomePageState extends State<HomePage> {
                                 blurRadius: 30.0,
                                 spreadRadius: 1)
                           ]),
-                      child: _buildPanel(locationViewProvider, orderProvider),
+                      child: _buildPanel(
+                          locationViewProvider, orderProvider, userPreferences),
                     ),
                   ),
                 if (deviceView == DeviceView.MOBILE)
@@ -289,15 +302,56 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildPanel(
+  Widget _buildPanel(LocationViewProvider locationViewProvider,
+      OrderProvider orderProvider, UserPreferences userPreferences) {
+    if (_viewState == ViewState.DEFAULT) {
+      return _buildViewDefault(locationViewProvider, orderProvider);
+    } else if (_viewState == ViewState.LOCALSTATION) {
+      return _buildViewLocal(
+          locationViewProvider, orderProvider, userPreferences);
+    } else if (_viewState == ViewState.OUTSIDESTATION) {
+      return _buildViewOutside(
+          locationViewProvider, orderProvider, userPreferences);
+    }
+  }
+
+  Widget _buildViewDefault(
       LocationViewProvider locationViewProvider, OrderProvider orderProvider) {
     return AnimatedPadding(
       duration: Duration(milliseconds: 500),
       padding:
-          EdgeInsets.only(top: MediaQuery.of(context).size.height / 6 - 50),
+          EdgeInsets.only(top: MediaQuery.of(context).size.height / 6 - 80),
       child: SingleChildScrollView(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      if (_locationFormKey.currentState.validate()) {
+                        setState(() {
+                          if (orderProvider.getStationView == StationView.LOCAL)
+                            setState(() => _viewState = ViewState.LOCALSTATION);
+                          if (orderProvider.getStationView ==
+                              StationView.OUTSIDESTATION)
+                            setState(
+                                () => _viewState = ViewState.OUTSIDESTATION);
+                        });
+                      }
+                    },
+                    child: Row(
+                      children: [Text("NEXT"), Icon(Icons.arrow_forward_ios)],
+                    ),
+                  )
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
             Align(
               alignment: Alignment.topCenter,
               child: Row(
@@ -410,6 +464,11 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   children: [
                     TextFormField(
+                      validator: (val) {
+                        if (val.length <= 5) {
+                          return "Enter a valid location !";
+                        }
+                      },
                       onTap: () {
                         locationViewProvider
                             .setLocationView(LocationView.PICKUP);
@@ -430,6 +489,11 @@ class _HomePageState extends State<HomePage> {
                     ),
                     SizedBox(height: 10.0),
                     TextFormField(
+                      validator: (val) {
+                        if (val.length <= 5) {
+                          return "Enter a valid location !";
+                        }
+                      },
                       onTap: () {
                         locationViewProvider.setLocationView(LocationView.DROP);
                       },
@@ -454,6 +518,747 @@ class _HomePageState extends State<HomePage> {
                     _buildOtherItems(locationViewProvider),
                   ],
                 ),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewLocal(LocationViewProvider locationViewProvider,
+      OrderProvider orderProvider, UserPreferences userPreferences) {
+    return AnimatedPadding(
+      duration: Duration(milliseconds: 500),
+      padding:
+          EdgeInsets.only(top: MediaQuery.of(context).size.height / 6 - 100),
+      child: SingleChildScrollView(
+        child: Stack(
+          children: [
+            Container(
+              height: MediaQuery.of(context).size.height,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              setState(() => _viewState = ViewState.DEFAULT);
+                            });
+                          },
+                          child: Row(
+                            children: [
+                              Icon(Icons.arrow_back_ios),
+                              Text("BACK"),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 0.0),
+                      child: Column(children: <Widget>[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10.0),
+                          child: Container(
+                            height: 70,
+                            padding:
+                                EdgeInsets.only(top: 10.0, right: 10, left: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.black26,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Octicons.primitive_dot,
+                                        color: Colors.green),
+                                    SizedBox(width: 10.0),
+                                    Flexible(
+                                      child: Text(
+                                        _pickUpController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(Octicons.primitive_dot,
+                                        color: Colors.red),
+                                    SizedBox(width: 10.0),
+                                    Flexible(
+                                      child: Text(
+                                        _dropController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ])),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      DropdownButton<String>(
+                        hint: Text("Select Truck Category"),
+                        onChanged: (String value) {
+                          print(value);
+                          orderProvider.setTruckCategoryLocal(value);
+                        },
+                        elevation: 5,
+                        value: orderProvider.getSelectedTruckLocal,
+                        items:
+                            orderProvider.getTruckCatLocal.map((String truck) {
+                          return DropdownMenuItem(
+                            value: truck,
+                            child: Text(truck),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                  orderProvider.getSelectedTruckLocal != null
+                      ? Container(
+                          height: MediaQuery.of(context).size.height / 2 - 60,
+                          child: StreamBuilder(
+                              stream: Firestore.instance
+                                  .collection('trucks')
+                                  .where("category",
+                                      isEqualTo:
+                                          orderProvider.getSelectedTruckLocal)
+                                  .snapshots(),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                      child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        ThemeColors.primaryColor),
+                                  ));
+                                } else {
+                                  if (snapshot.data.documents.length == 0) {
+                                    return Center(
+                                        child: Text(
+                                            "No Trucks of this category !"));
+                                  }
+                                  return Column(children: <Widget>[
+                                    Container(
+                                      height: 210,
+                                      child: ListView(
+                                        scrollDirection: Axis.horizontal,
+                                        shrinkWrap: true,
+                                        primary: true,
+                                        physics:
+                                            AlwaysScrollableScrollPhysics(),
+                                        children: snapshot.data.documents
+                                            .map((DocumentSnapshot truck) {
+                                          return InkWell(
+                                            onTap: () {
+                                              setState(() => price =
+                                                  truck.data['priceFactor']);
+                                              orderProvider.setTruckName(
+                                                  truck.data['name']);
+                                            },
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(0.0),
+                                              child: Container(
+                                                  width: 200,
+                                                  decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              15),
+                                                      border: Border.all(
+                                                          color: orderProvider
+                                                                      .getTruckName ==
+                                                                  truck.data['name']
+                                                              ? ThemeColors.primaryColor
+                                                              : Colors.white,
+                                                          style: BorderStyle.solid,
+                                                          width: 3),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                            blurRadius: 10,
+                                                            color: Colors
+                                                                .grey.shade100,
+                                                            spreadRadius: 4.0)
+                                                      ]),
+                                                  margin: const EdgeInsets
+                                                          .symmetric(
+                                                      horizontal: 10.0,
+                                                      vertical: 0.0),
+                                                  child: Container(
+                                                    child: Column(
+                                                      children: <Widget>[
+                                                        Text(
+                                                          ' ${truck.data['name']} ${truck.data['capacity']}',
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14.0),
+                                                        ),
+                                                        CachedNetworkImage(
+                                                          imageBuilder:
+                                                              (context,
+                                                                  provider) {
+                                                            return Container(
+                                                                margin: EdgeInsets
+                                                                    .symmetric(
+                                                                        horizontal:
+                                                                            10),
+                                                                height: 80,
+                                                                width: 80,
+                                                                child: Image(
+                                                                    image:
+                                                                        provider,
+                                                                    height: 100,
+                                                                    width:
+                                                                        100));
+                                                          },
+                                                          imageUrl: truck
+                                                              .data['image'],
+                                                          placeholder:
+                                                              (context, str) {
+                                                            return Container(
+                                                              margin: EdgeInsets
+                                                                  .symmetric(
+                                                                      horizontal:
+                                                                          10),
+                                                              height: 100,
+                                                              width: 100,
+                                                              child: Image.asset(
+                                                                  'images/newlogo.png'),
+                                                            );
+                                                          },
+                                                        ),
+                                                        Text(
+                                                          "20 min away",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14.0),
+                                                        ),
+                                                        Text(
+                                                          "  Size : ${truck.data['dimension']}",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14.0),
+                                                        ),
+                                                        Text(
+                                                          "Estimated Fare :  ₹ ${110.toString()}",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 18.0),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    )
+                                  ]);
+                                }
+                              }))
+                      : Container(),
+                  Form(
+                    key: _receiverFormKey,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            validator: (val) {
+                              if (val.length <= 3) {
+                                return "Enter Valid Name !";
+                              }
+                            },
+                            onSaved: (val) {
+                              orderProvider.setReceiverName(val);
+                            },
+                            controller: _receiverName,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 15.0, horizontal: 10.0),
+                                hintText: "Receiver Name",
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0))),
+                          ),
+                          SizedBox(height: 5.0),
+                          TextFormField(
+                            validator: (val) {
+                              if (val.length != 10) {
+                                return "Enter Valid Phone";
+                              }
+                            },
+                            onSaved: (val) {
+                              orderProvider.setReceiverPhone(val);
+                            },
+                            controller: _receiverPhone,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 10.0, horizontal: 10.0),
+                                hintText: "Enter Receiver Phone",
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0))),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: 20,
+              left: 10,
+              right: 10,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  DropdownButton<String>(
+                    onChanged: (val) {
+                      orderProvider.setPaymentMethod(val);
+                    },
+                    hint: Text("Payment"),
+                    value: orderProvider.getSelectedPaymentMethod,
+                    items: ["Paytm", "Cash"]
+                        .map((e) => DropdownMenuItem(
+                              child: Text(e),
+                              value: e,
+                            ))
+                        .toList(),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      if (_receiverFormKey.currentState.validate()) {
+                        _receiverFormKey.currentState.save();
+                        _firebaseUtils.startOrder(locationViewProvider,
+                            orderProvider, userPreferences, context);
+                      }
+                    },
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: 35,
+                      width: 140,
+                      decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [
+                            ThemeColors.primaryColor,
+                            Color(0xff8E2DE2)
+                          ]),
+                          borderRadius: BorderRadius.circular(15.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: ThemeColors.primaryColor.withOpacity(0.2),
+                              blurRadius: 10.0,
+                              spreadRadius: 2.0,
+                            )
+                          ]),
+                      child: Text(
+                        "Checkout",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewOutside(LocationViewProvider locationViewProvider,
+      OrderProvider orderProvider, UserPreferences userPreferences) {
+    return AnimatedPadding(
+      duration: Duration(milliseconds: 500),
+      padding:
+          EdgeInsets.only(top: MediaQuery.of(context).size.height / 6 - 80),
+      child: SingleChildScrollView(
+        child: Stack(
+          children: [
+            Container(
+              height: MediaQuery.of(context).size.height,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              setState(() => _viewState = ViewState.DEFAULT);
+                            });
+                          },
+                          child: Row(
+                            children: [
+                              Icon(Icons.arrow_back_ios),
+                              Text("BACK"),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 0.0),
+                      child: Column(children: <Widget>[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10.0),
+                          child: Container(
+                            height: 70,
+                            padding:
+                                EdgeInsets.only(top: 10.0, right: 10, left: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.black26,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Octicons.primitive_dot,
+                                        color: Colors.green),
+                                    SizedBox(width: 10.0),
+                                    Flexible(
+                                      child: Text(
+                                        _pickUpController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(Octicons.primitive_dot,
+                                        color: Colors.red),
+                                    SizedBox(width: 10.0),
+                                    Flexible(
+                                      child: Text(
+                                        _dropController.text,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ])),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      DropdownButton<String>(
+                        hint: Text("Select Truck Category"),
+                        onChanged: (String value) {
+                          print(value);
+                          orderProvider.setTruckCategory(value);
+                        },
+                        elevation: 5,
+                        value: orderProvider.getSelectedTruck,
+                        items:
+                            orderProvider.getTruckCategory.map((String truck) {
+                          return DropdownMenuItem(
+                            value: truck,
+                            child: Text(truck),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                  orderProvider.getSelectedTruckLocal != null
+                      ? Container(
+                          height: MediaQuery.of(context).size.height / 2 - 50,
+                          child: StreamBuilder(
+                              stream: Firestore.instance
+                                  .collection('trucks')
+                                  .where("category",
+                                      isEqualTo:
+                                          orderProvider.getSelectedTruck)
+                                  .snapshots(),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                      child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        ThemeColors.primaryColor),
+                                  ));
+                                } else {
+                                  if (snapshot.data.documents.length == 0) {
+                                    return Center(
+                                        child: Text(
+                                            "No Trucks of this category !"));
+                                  }
+                                  return Column(children: <Widget>[
+                                    Container(
+                                      height: 220,
+                                      child: ListView(
+                                        scrollDirection: Axis.horizontal,
+                                        shrinkWrap: true,
+                                        primary: true,
+                                        physics:
+                                            AlwaysScrollableScrollPhysics(),
+                                        children: snapshot.data.documents
+                                            .map((DocumentSnapshot truck) {
+                                          return InkWell(
+                                            onTap: () {
+                                              setState(() => price =
+                                                  truck.data['priceFactor']);
+                                              orderProvider.setTruckName(
+                                                  truck.data['name']);
+                                            },
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Container(
+                                                  width: 200,
+                                                  decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              15),
+                                                      border: Border.all(
+                                                          color: orderProvider
+                                                                      .getTruckName ==
+                                                                  truck.data['name']
+                                                              ? ThemeColors.primaryColor
+                                                              : Colors.white,
+                                                          style: BorderStyle.solid,
+                                                          width: 3),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                            blurRadius: 10,
+                                                            color: Colors
+                                                                .grey.shade100,
+                                                            spreadRadius: 4.0)
+                                                      ]),
+                                                  margin: const EdgeInsets
+                                                          .symmetric(
+                                                      horizontal: 10.0,
+                                                      vertical: 0.0),
+                                                  child: Container(
+                                                    child: Column(
+                                                      children: <Widget>[
+                                                        Text(
+                                                          ' ${truck.data['name']} ${truck.data['capacity']}',
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14.0),
+                                                        ),
+                                                        CachedNetworkImage(
+                                                          imageBuilder:
+                                                              (context,
+                                                                  provider) {
+                                                            return Container(
+                                                                margin: EdgeInsets
+                                                                    .symmetric(
+                                                                        horizontal:
+                                                                            10),
+                                                                height: 80,
+                                                                width: 80,
+                                                                child: Image(
+                                                                    image:
+                                                                        provider,
+                                                                    height: 100,
+                                                                    width:
+                                                                        100));
+                                                          },
+                                                          imageUrl: truck
+                                                              .data['image'],
+                                                          placeholder:
+                                                              (context, str) {
+                                                            return Container(
+                                                              margin: EdgeInsets
+                                                                  .symmetric(
+                                                                      horizontal:
+                                                                          10),
+                                                              height: 100,
+                                                              width: 100,
+                                                              child: Image.asset(
+                                                                  'images/newlogo.png'),
+                                                            );
+                                                          },
+                                                        ),
+                                                        Text(
+                                                          "20 min away",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14.0),
+                                                        ),
+                                                        Text(
+                                                          "  Size : ${truck.data['dimension']}",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14.0),
+                                                        ),
+                                                        Text(
+                                                          "Estimated Fare :  ₹ ${110.toString()}",
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 18.0),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    )
+                                  ]);
+                                }
+                              }))
+                      : Container(),
+                  Form(
+                    key: _receiverFormKey,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            validator: (val) {
+                              if (val.length <= 3) {
+                                return "Enter Valid Name !";
+                              }
+                            },
+                            onSaved: (val) {
+                              orderProvider.setReceiverName(val);
+                            },
+                            controller: _receiverName,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 15.0, horizontal: 10.0),
+                                hintText: "Receiver Name",
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0))),
+                          ),
+                          SizedBox(height: 10.0),
+                          TextFormField(
+                            validator: (val) {
+                              if (val.length != 10) {
+                                return "Enter Valid Phone";
+                              }
+                            },
+                            onSaved: (val) {
+                              orderProvider.setReceiverPhone(val);
+                            },
+                            controller: _receiverPhone,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 10.0, horizontal: 10.0),
+                                hintText: "Enter Receiver Phone",
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0))),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: 25,
+              left: 10,
+              right: 10,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  DropdownButton<String>(
+                    onChanged: (val) {
+                      orderProvider.setPaymentMethod(val);
+                    },
+                    value: orderProvider.getSelectedPaymentMethod,
+                    hint: Text("Payment Method"),
+                    items: ["Paytm", "Cash"]
+                        .map((e) => DropdownMenuItem(
+                              child: Text(e),
+                              value: e,
+                            ))
+                        .toList(),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      if (_receiverFormKey.currentState.validate()) {
+                        _receiverFormKey.currentState.save();
+                        _firebaseUtils.startOrder(locationViewProvider,
+                            orderProvider, userPreferences, context);
+                      }
+                    },
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: 35,
+                      width: 140,
+                      decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [
+                            ThemeColors.primaryColor,
+                            Color(0xff8E2DE2)
+                          ]),
+                          borderRadius: BorderRadius.circular(15.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: ThemeColors.primaryColor.withOpacity(0.2),
+                              blurRadius: 10.0,
+                              spreadRadius: 2.0,
+                            )
+                          ]),
+                      child: Text(
+                        "Checkout",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                  )
+                ],
               ),
             )
           ],
