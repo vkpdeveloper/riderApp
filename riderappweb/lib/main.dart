@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:riderappweb/constants/themecolors.dart';
 import 'package:riderappweb/providers/location_provider.dart';
 import 'package:riderappweb/providers/order_provider.dart';
+import 'package:riderappweb/providers/user_provider.dart';
 
 import 'pages/homepage.dart';
 
@@ -19,6 +20,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => OrderProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => UserPreferences(),
         )
       ],
       child: MaterialApp(

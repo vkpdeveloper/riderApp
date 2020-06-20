@@ -4,7 +4,7 @@ import 'package:riderappweb/enums/station_view.dart';
 import 'package:riderappweb/providers/location_provider.dart';
 
 class OrderProvider with ChangeNotifier {
-  int _selectedPaymentMethod;
+  String _selectedPaymentMethod;
   String _receiverName;
   String _receiverPhone;
   String _truckName;
@@ -12,19 +12,23 @@ class OrderProvider with ChangeNotifier {
   int _groupOfRideType = 0;
   double _totalDistance;
   StaticUtils _utils = StaticUtils();
-  List<String> _trucksCategory = ["Mini", "Small", "Medium", "Large"];
-  List<String> _trucksCategoryLocal = [
-    "Mini",
-    "Small",
-    "Medium",
+  List<String> _trucksCategory = [
+    "Mini (< 1 MT)",
+    "Small (< 5 MT)",
+    "Medium (5 - 15 MT)",
+    "Large (15 - 40 MT)"
   ];
-  String _selectedTruck = "Mini";
-  String _selectedTruckLocal = "Mini";
+  List<String> _trucksCategoryLocal = [
+    "Mini (< 1 MT)",
+    "Small (< 5 MT)",
+    "Medium (5 - 15 MT)",
+  ];
+  String _selectedTruck;
+  String _selectedTruckLocal;
   StationView _stationView;
   int _selectedLocalView = 0;
 
   OrderProvider() {
-    _selectedPaymentMethod = 0;
     _totalDistance = 0;
     _orderPrice = 0;
     _receiverName = "";
@@ -33,7 +37,7 @@ class OrderProvider with ChangeNotifier {
     _stationView = StationView.LOCAL;
   }
 
-  int get getSelectedPaymentMethod => _selectedPaymentMethod;
+  String get getSelectedPaymentMethod => _selectedPaymentMethod;
 
   int get getRideType => _groupOfRideType;
 
@@ -59,7 +63,7 @@ class OrderProvider with ChangeNotifier {
 
   int get getSelectedLocalView => _selectedLocalView;
 
-  void setPaymentMethod(int id) {
+  void setPaymentMethod(String id) {
     _selectedPaymentMethod = id;
     notifyListeners();
   }

@@ -135,9 +135,9 @@ class FirebaseUtils {
       UserPreferences userPreferences,
       BuildContext context) {
     DateTime currentDate = new DateTime.now();
+    String pin = currentDate.millisecondsSinceEpoch.toString().substring(4, 10);
     String orderID =
         "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
-    print(orderID);
     Map<String, dynamic> orderData = {
       "orderID": orderID,
       "userID": userPreferences.getUserID,
@@ -151,6 +151,7 @@ class FirebaseUtils {
         locationViewProvider.getPickUpLatLng.latitude,
         locationViewProvider.getPickUpLatLng.longitude
       ],
+      "pickUpPin": pin,
       "destLatLng": [
         locationViewProvider.getDestinationLatLng.latitude,
         locationViewProvider.getDestinationLatLng.longitude
@@ -180,6 +181,8 @@ class FirebaseUtils {
       BuildContext context) {
     DateTime currentDate = new DateTime.now();
 
+    String pin = currentDate.millisecondsSinceEpoch.toString().substring(4, 10);
+
     String orderID =
         "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
     Map<String, dynamic> orderData = {
@@ -195,6 +198,7 @@ class FirebaseUtils {
         locationViewProvider.getPickUpLatLng.latitude,
         locationViewProvider.getPickUpLatLng.longitude
       ],
+      "pickUpPin": pin,
       "destLatLng": [
         locationViewProvider.getDestinationLatLng.latitude,
         locationViewProvider.getDestinationLatLng.longitude
@@ -225,6 +229,7 @@ class FirebaseUtils {
       UserPreferences userPreferences,
       BuildContext context) {
     DateTime currentDate = new DateTime.now();
+    String pin = currentDate.millisecondsSinceEpoch.toString().substring(4, 10);
     String orderID =
         "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
     Map<String, dynamic> orderData = {
@@ -242,6 +247,7 @@ class FirebaseUtils {
         locationViewProvider.getPickUpLatLng.latitude,
         locationViewProvider.getPickUpLatLng.longitude
       ],
+      "pickUpPin": pin,
       "destLatLng": [
         locationViewProvider.getDestinationLatLng.latitude,
         locationViewProvider.getDestinationLatLng.longitude
