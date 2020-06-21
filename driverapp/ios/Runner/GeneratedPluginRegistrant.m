@@ -100,6 +100,12 @@
 @import url_launcher;
 #endif
 
+#if __has_include(<wc_flutter_share/WcFlutterSharePlugin.h>)
+#import <wc_flutter_share/WcFlutterSharePlugin.h>
+#else
+@import wc_flutter_share;
+#endif
+
 @implementation GeneratedPluginRegistrant
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
@@ -119,6 +125,7 @@
   [PermissionPlugin registerWithRegistrar:[registry registrarForPlugin:@"PermissionPlugin"]];
   [StreamsChannelPlugin registerWithRegistrar:[registry registrarForPlugin:@"StreamsChannelPlugin"]];
   [FLTURLLauncherPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTURLLauncherPlugin"]];
+  [WcFlutterSharePlugin registerWithRegistrar:[registry registrarForPlugin:@"WcFlutterSharePlugin"]];
 }
 
 @end

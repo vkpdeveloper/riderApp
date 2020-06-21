@@ -33,5 +33,6 @@ public final class GeneratedPluginRegistrant {
       com.ly.permission.PermissionPlugin.registerWith(shimPluginRegistry.registrarFor("com.ly.permission.PermissionPlugin"));
     flutterEngine.getPlugins().add(new app.loup.streams_channel.StreamsChannelPlugin());
     flutterEngine.getPlugins().add(new io.flutter.plugins.urllauncher.UrlLauncherPlugin());
+    flutterEngine.getPlugins().add(new com.wisecrab.wc_flutter_share.WcFlutterSharePlugin());
   }
 }

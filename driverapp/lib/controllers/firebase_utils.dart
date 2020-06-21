@@ -170,15 +170,21 @@ class FirebaseUtils {
     });
   }
 
-  void pickUpDone(String orderid, OrderProvider provider) {
-    Firestore.instance.collection('allOrders').document(orderid).updateData({
-      "isPicked": true,
-    });
-    provider.setIsPicked(true);
+  void pickUpDone(String orderid, OrderProvider provider,
+      TextEditingController pinController, String pin) {
+    if (pinController.text == pin) {
+      Firestore.instance.collection('allOrders').document(orderid).updateData({
+        "isPicked": true,
+      });
+      provider.setIsPicked(true);
+    } else {
+      Fluttertoast.showToast(msg: "Enter a valid PIN");
+    }
   }
 
-  void deliveryDone(String orderid, OrderProvider provider) async {
-    Firestore.instance.collection('allOrders').document(orderid).updateData({
+  void deliveryDone(String orderid, OrderProvider provider, TextEditingController dropPinController, String dropPin) async {
+    if(dropPinController.text == dropPin) {
+      Firestore.instance.collection('allOrders').document(orderid).updateData({
       "isPicked": true,
       "isDelivered": true,
       "isStart": true,
@@ -189,5 +195,8 @@ class FirebaseUtils {
       "isFree": true,
     });
     provider.setIsDropped(true);
+    } else {
+      Fluttertoast.showToast(msg: "Invalid Drop Pin");
+    }
   }
 }

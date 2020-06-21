@@ -29,7 +29,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
                             CircleAvatar(
-                              radius: 50,
+                              radius: 70,
                               backgroundImage: NetworkImage(
                                   "https://vaibhavpathakofficial.tk/img/vaibhav.png"),
                               backgroundColor: ThemeColors.primaryColor,

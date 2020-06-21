@@ -1,5 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:driverapp/constants/themecolors.dart';
+import 'package:driverapp/controllers/firebase_utils.dart';
+import 'package:driverapp/providers/user_sharedpref_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smooth_star_rating/smooth_star_rating.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 
@@ -9,29 +13,35 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  var _userdata;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     double _height = MediaQuery.of(context).size.height;
     double _width = MediaQuery.of(context).size.width;
+    UserPreferences user = Provider.of<UserPreferences>(context);
+    String userName = user.getUserName;
+    String userPhone = user.getUserPhone;
+    String userProfileUrl  = user.getProfile;
+    String vehicleName = user.getVehicleName;
+    String vehicleNumber = user.getVehicleNumber;
+    double rating = user.getRating;
+
+    
+
+
     return Scaffold(
-      backgroundColor: Colors.green[200],
+      backgroundColor: Colors.white,
       body: SafeArea(
           child: Stack(
         children: <Widget>[
-          Positioned(
-            right: 1,
-            top: 10,
-            child: FlatButton(
-                shape: CircleBorder(),
-                padding: EdgeInsets.all(8.0),
-                onPressed: () {},
-                child: Icon(
-                  FontAwesome.phone,
-                  color: Colors.green,
-                  size: 25,
-                )),
-          ),
-          Column(
+         Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Container(
@@ -40,10 +50,10 @@ class _ProfileState extends State<Profile> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: <Widget>[
                     Text(
-                      "Driver Name",
-                      style: TextStyle(fontSize: 25),
+                      userName ?? "Loading...",
+                      style: TextStyle(fontSize: 25,color: Colors.black ),
                     ),
-                    Text("Vehicle Name | Vehicle Number")
+                    Text("$vehicleName | $vehicleNumber")
                   ],
                 ),
               ),
@@ -53,9 +63,9 @@ class _ProfileState extends State<Profile> {
                   child: Column(
                     children: <Widget>[
                       CircleAvatar(
-                        radius: 50,
+                        radius: 70,
                         backgroundImage: NetworkImage(
-                            "https://vaibhavpathakofficial.tk/img/vaibhav.png"),
+                            userProfileUrl),
                         backgroundColor: ThemeColors.primaryColor,
                       ),
                       Padding(
@@ -64,14 +74,14 @@ class _ProfileState extends State<Profile> {
                             allowHalfRating: false,
                             onRated: (v) {},
                             starCount: 5,
-                            rating: 3.5,
+                            rating: rating,
                             size: 25.0,
                             isReadOnly: true,
                             color: Colors.yellow,
                             borderColor: Colors.yellow,
                             spacing: 0.0),
                       ),
-                      Text("3.5"),
+                      Text(rating.toString()),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[

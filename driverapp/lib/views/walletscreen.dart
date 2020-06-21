@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:driverapp/controllers/firebase_utils.dart';
 import 'package:driverapp/views/tripdetails.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
@@ -12,6 +14,36 @@ class WalletScreen extends StatefulWidget {
 
 class _WalletScreenState extends State<WalletScreen> {
   DateTime _datetime = DateTime.now();
+  String _currentDate;
+  Map<String, dynamic> _todaysEarning;
+  FirebaseUtils _utils = FirebaseUtils();
+  int getWholeMoneyOfToday = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentDate = "${_datetime.day}-${_datetime.month}-${_datetime.year}";
+    getTodayEarning();
+  }
+
+  getTodayEarning() async {
+    getWholeMoneyOfToday = 0;
+    DocumentSnapshot _vendorTodayData = await Firestore.instance
+        .collection('vendor')
+        .document(await _utils.getuserphoneno())
+        .collection('wallet')
+        .document(_currentDate)
+        .get();
+    if (_vendorTodayData.data != null) {
+      for (dynamic moneyKey in _vendorTodayData.data.keys) {
+        getWholeMoneyOfToday += _vendorTodayData.data[moneyKey];
+      }
+    }
+    setState(() {
+      _todaysEarning = _vendorTodayData.data;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     double _height = MediaQuery.of(context).size.height;
@@ -32,25 +64,6 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  //                   CustomScrollView(
-                  //   slivers: <Widget>[
-                  //     SliverAppBar(
-                  //       title: Text('Title'),
-                  //       centerTitle: true,
-                  //     ),
-                  //     SliverList(
-                  //       delegate: SliverChildBuilderDelegate(
-                  //         (BuildContext context, int index) {
-                  //           return ListTile(
-                  //             title: Text('${items[index]}'),
-                  //           );
-                  //         },
-                  //         childCount: items.length,
-                  //       ),
-                  //     ),
-                  //   ],
-                  // )
-
                   Column(
                     children: <Widget>[
                       Text("Daily Earnings",
@@ -59,7 +72,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               fontSize: 20.0,
                               color: Colors.white,
                               fontWeight: FontWeight.bold)),
-                      Text(formatted,
+                      Text(_currentDate,
                           style: GoogleFonts.openSans(
                               letterSpacing: 1.5,
                               fontSize: 12.0,
@@ -69,13 +82,8 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                   SizedBox(height: 20.0),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Icon(
-                        FontAwesome.arrow_circle_left,
-                        color: Colors.white,
-                        size: 30.0,
-                      ),
                       Row(
                         children: <Widget>[
                           Icon(
@@ -85,7 +93,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                           SizedBox(width: 5.0),
                           Text(
-                            "100.68",
+                            getWholeMoneyOfToday.toString(),
                             style: GoogleFonts.openSans(
                                 letterSpacing: 1.5,
                                 fontSize: 28.0,
@@ -93,55 +101,6 @@ class _WalletScreenState extends State<WalletScreen> {
                                 fontWeight: FontWeight.bold),
                           ),
                         ],
-                      ),
-                      Icon(
-                        FontAwesome.arrow_circle_right,
-                        color: Colors.white,
-                        size: 30.0,
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            ),
-            Container(
-              color: Colors.white24,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Column(
-                    children: <Widget>[
-                      Text("Trip Earning"),
-                      Text(
-                        "₹ 1200",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: <Widget>[
-                      Text("Incentive"),
-                      Text(
-                        "₹ 1000",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: <Widget>[
-                      Text("Panelty"),
-                      Text(
-                        "₹ 100",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: <Widget>[
-                      Text("Surcharge"),
-                      Text(
-                        "₹ 800",
-                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   )
@@ -163,61 +122,44 @@ class _WalletScreenState extends State<WalletScreen> {
                   children: <Widget>[
                     Card(
                       child: Container(
+                        padding: EdgeInsets.only(bottom: 10),
                         width: _width - 20,
                         child: Column(
                           children: <Widget>[
                             Container(
                                 color: Colors.green,
                                 child: Padding(
-                                  padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                                  padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.start,
                                     children: <Widget>[
-                                      Text("CRN23423424234234 : 4:30 PM"),
-                                      Icon(Icons.arrow_forward)
+                                      Text(_currentDate),
                                     ],
                                   ),
                                 )),
-                            Container(
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
-                                child: Column(
-                                  children: <Widget>[
+                            SizedBox(height: 10),
+                            if (_todaysEarning != null)
+                              for (String keys in _todaysEarning.keys) ...[
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  child: Column(children: <Widget>[
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: <Widget>[
-                                        Text("Trip Fare"),
-                                        Text("₹ 800")
+                                        Text(keys),
+                                        Text("₹ ${_todaysEarning[keys]}")
                                       ],
                                     ),
                                     Divider(
                                       color: Colors.black45,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: <Widget>[
-                                        Text("Trip Earning"),
-                                        Text("₹ 500")
-                                      ],
-                                    ),
-                                    Divider(
-                                      color: Colors.black45,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: <Widget>[
-                                        Text("Cash Collected"),
-                                        Text("₹ 500")
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
+                                    )
+                                  ]),
+                                )
+                              ],
+                            if (_todaysEarning == null)
+                              Text("No Earning record !")
                           ],
                         ),
                       ),
@@ -237,14 +179,16 @@ class _WalletScreenState extends State<WalletScreen> {
               onPressed: () {
                 showDatePicker(
                         context: context,
-                        initialDate: DateTime.now(),
+                        initialDate: _datetime,
                         firstDate: DateTime(2019),
                         lastDate: DateTime.now())
                     .then((date) {
                   if (date != null) {
                     setState(() {
                       _datetime = date;
+                      _currentDate = "${date.day}-${date.month}-${date.year}";
                     });
+                    getTodayEarning();
                   }
                 });
               },

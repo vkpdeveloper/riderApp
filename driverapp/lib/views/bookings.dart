@@ -33,9 +33,10 @@ class _BookingsState extends State<Bookings> {
                     valueColor: AlwaysStoppedAnimation<Color>(
                         ThemeColors.primaryColor)));
           } else {
-            if (snapshot.data.documents.length == 0)
+            if (snapshot.data.documents.length == 0) {
+              print(snapshot.data.documents.length);
               return Center(child: Text("NO ORDERS !"));
-            else {
+            } else {
               return ListView(
                 children: snapshot.data.documents.map((DocumentSnapshot order) {
                   double distance = order.data['distance'];
@@ -100,7 +101,7 @@ class _BookingsState extends State<Bookings> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    "${order.data['receiverName']}",
+                                    "${order.data['userName'].toString().toUpperCase()}",
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13.0),
@@ -174,7 +175,7 @@ class _BookingsState extends State<Bookings> {
                                 Align(
                                     alignment: Alignment.topLeft,
                                     child: Text(
-                                      "User: ${order.data['userName']}",
+                                      "User: ${order.data['userName'].toString().toUpperCase()}",
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                       style: TextStyle(
@@ -184,7 +185,7 @@ class _BookingsState extends State<Bookings> {
                                 Align(
                                     alignment: Alignment.topLeft,
                                     child: Text(
-                                      "Receiver: ${order.data['receiverName']}",
+                                      "Receiver: ${order.data['receiverName'].toString().toUpperCase()}",
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                       style: TextStyle(

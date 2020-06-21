@@ -11,7 +11,11 @@ class UserPreferences with ChangeNotifier {
   String _email;
   String _userID;
   bool _isFree;
+  String _profilePhoto;
   FirebaseUtils _utils = FirebaseUtils();
+  String _vehicelName;
+  String _vehicleNumber;
+  double _rating;
 
   UserPreferences() {
     _name = "";
@@ -19,7 +23,11 @@ class UserPreferences with ChangeNotifier {
     _token = "";
     _email = "";
     _userID = "";
+    _profilePhoto = "";
     _isFree = false;
+    _vehicelName = "";
+    _vehicleNumber = "";
+    _rating = 0;
   }
 
   void init() async {
@@ -37,6 +45,10 @@ class UserPreferences with ChangeNotifier {
       _phoneNumber = userData.data['phone'];
       _token = userData.data['token'];
       _isFree = userData.data['isFree'];
+      _profilePhoto = userData.data['profile'];
+      _vehicleNumber = userData.data['vehicleNumber'];
+      _vehicelName = userData.data['vehicleName'];
+      _rating = userData.data['rating'];
     }
     notifyListeners();
   }
@@ -47,6 +59,10 @@ class UserPreferences with ChangeNotifier {
   String get getUserEmail => _email;
   String get getUserToken => _token;
   bool get getIsFree => _isFree;
+  String get getProfile => _profilePhoto;
+  String get getVehicleName => _vehicelName;
+  String get getVehicleNumber => _vehicleNumber;
+  double get getRating => _rating;
 
   void setIsFree(bool val) async {
     FirebaseUser _user = await _utils.getCurrentUser();

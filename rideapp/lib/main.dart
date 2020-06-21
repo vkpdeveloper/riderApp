@@ -22,11 +22,7 @@ import 'package:rideapp/views/supportscreen.dart';
 import 'package:rideapp/views/walletscreen.dart';
 import 'package:rideapp/views/profile_screen.dart';
 
-void main() => runApp(
-  
-    MyApp()
-    
-    );
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override

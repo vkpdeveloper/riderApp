@@ -9,6 +9,7 @@ import 'package:driverapp/providers/order_provider.dart';
 import 'package:driverapp/providers/user_sharedpref_provider.dart';
 import 'package:driverapp/services/firebase_auth_service.dart';
 import 'package:driverapp/views/signup/Verification.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -87,12 +88,28 @@ class _TrackOrderState extends State<HomeScreen> {
   Timer _updateTimer;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   OrderLoadingState orderLoadingState = OrderLoadingState.LOADING;
+  bool _isReachedPickUp = false;
+  TextEditingController _pickUpPinController = TextEditingController();
+  String pickUpPin = "";
+  bool _isReachedDrop = false;
+  String dropPin = "";
+  FirebaseMessaging _messaging = FirebaseMessaging();
+  String firebaseUserToken = "";
 
   @override
   void initState() {
     super.initState();
     getOrderDetails();
     _controller = PanelController();
+    getTokenAndSubscribe();
+  }
+
+  getTokenAndSubscribe() async {
+    firebaseUserToken = await _messaging.getToken();
+    _messaging.subscribeToTopic("vendor");
+    Firestore.instance.collection('vendor').document(await _firebaseUtils.getuserphoneno()).updateData({
+      "token": firebaseUserToken
+    });
   }
 
   void dispose() {
@@ -106,7 +123,7 @@ class _TrackOrderState extends State<HomeScreen> {
     if (docs.documents.length == 1) {
       docs.documents.forEach((DocumentSnapshot doc) {
         _pickUpLatLng =
-            LatLng(doc.data['pickUpLatLng'][0], doc.data['pickUpLatLng'][0]);
+            LatLng(doc.data['pickUpLatLng'][0], doc.data['pickUpLatLng'][1]);
         _destinationLatLng =
             LatLng(doc.data['destLatLng'][0], doc.data['destLatLng'][1]);
         _price = doc.data['price'];
@@ -130,12 +147,18 @@ class _TrackOrderState extends State<HomeScreen> {
             await Permission.requestPermissions([PermissionName.Location]);
       } else {
         try {
-          allLats = await _googleMapPolyline.getCoordinatesWithLocation(
-              origin: _pickUpLatLng,
-              destination: _destinationLatLng,
-              mode: RouteMode.driving);
+          print(_pickUpLatLng);
+          print(_destinationLatLng);
+          List<LatLng> newLats =
+              await _googleMapPolyline.getCoordinatesWithLocation(
+                  origin: _pickUpLatLng,
+                  destination: _destinationLatLng,
+                  mode: RouteMode.driving);
+          setState(() {
+            allLats = newLats;
+          });
         } catch (e) {
-          print(e.toString());
+          print("Error : ${e.toString()}");
         }
       }
       Map<String, dynamic> mapData = await _staticUtils.getDistenceAndDuration(
@@ -178,11 +201,36 @@ class _TrackOrderState extends State<HomeScreen> {
     });
   }
 
+  sendPinNotf(bool isPickUp) async {
+    DocumentSnapshot pin = await Firestore.instance
+        .collection('allOrders')
+        .document(orderid)
+        .get();
+    if (pin.exists) {
+      if (isPickUp) {
+        String pickString = pin.data['pickUpPin'];
+        setState(() {
+          pickUpPin = pickString;
+          _isReachedPickUp = true;
+        });
+      } else {
+        String dropString = pin.data['dropPin'];
+        setState(() {
+          dropPin = dropString;
+          _isReachedDrop = true;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     OrderProvider provider = Provider.of<OrderProvider>(context);
     UserPreferences userPreferences = Provider.of<UserPreferences>(context);
     FirebaseAuthService _auth = Provider.of<FirebaseAuthService>(context);
+    if (userPreferences.getUserName == "") {
+      userPreferences.init();
+    }
     if (orderLoadingState == OrderLoadingState.LOADING) {
       return Scaffold(
         body: Center(
@@ -203,6 +251,12 @@ class _TrackOrderState extends State<HomeScreen> {
                       Navigator.pushNamed(context, '/profilescreen');
                     },
                     child: UserAccountsDrawerHeader(
+                      currentAccountPicture: CircleAvatar(
+                        radius: 60,
+                        backgroundImage:
+                            NetworkImage(userPreferences.getProfile),
+                        backgroundColor: ThemeColors.primaryColor,
+                      ),
                       accountName: Text(userPreferences.getUserName),
                       accountEmail: Text(userPreferences.getUserPhone),
                     )),
@@ -242,19 +296,10 @@ class _TrackOrderState extends State<HomeScreen> {
                   ),
                 ),
                 ListTile(
-                  onTap: () => Navigator.pushNamed(context, '/MAKESUPPORT'),
+                  onTap: () => Navigator.pushNamed(context, '/chat'),
                   leading: Icon(Icons.phone, color: ThemeColors.primaryColor),
                   title: Text(
                     "Support",
-                    style: TextStyle(color: ThemeColors.primaryColor),
-                  ),
-                ),
-                ListTile(
-                  onTap: () => Navigator.pushNamed(context, '/settings'),
-                  leading:
-                      Icon(Icons.settings, color: ThemeColors.primaryColor),
-                  title: Text(
-                    "Settings",
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
@@ -295,7 +340,7 @@ class _TrackOrderState extends State<HomeScreen> {
             defaultPanelState: PanelState.CLOSED,
             body: Stack(
               children: [
-                _pickUpLatLng == null
+                allLats == null
                     ? Center(
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
@@ -313,7 +358,7 @@ class _TrackOrderState extends State<HomeScreen> {
                         mapType: MapType.terrain,
                         initialCameraPosition: CameraPosition(
                             target: _pickUpLatLng,
-                            zoom: 18.0,
+                            zoom: 11.0,
                             tilt: 20.0,
                             bearing: 40.0),
                         onMapCreated: (GoogleMapController controller) {
@@ -371,52 +416,41 @@ class _TrackOrderState extends State<HomeScreen> {
               ],
             ),
             controller: _controller,
-            header: isPanelOpen
-                ? Container()
-                : Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        Text(
-                          "Hello, Driver",
-                          style: TextStyle(
-                              fontSize: 16.0, fontWeight: FontWeight.bold),
-                        ),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(
-                                MediaQuery.of(context).size.width / 2 - 40,
-                                0,
-                                10,
-                                0),
-                            child: RichText(
-                              text: TextSpan(
-                                  style: TextStyle(
-                                      color: ThemeColors.primaryColor),
-                                  children: [
-                                    TextSpan(
-                                        text: dataOfPickUp == null
-                                            ? "loading..."
-                                            : dataOfPickUp['duration'])
-                                  ],
-                                  text: "Total time : "),
-                            ))
-                      ],
-                    )),
             minHeight: MediaQuery.of(context).size.height / 3 + 10,
             maxHeight: MediaQuery.of(context).size.height,
             collapsed: Padding(
-              padding: const EdgeInsets.only(top: 30.0),
+              padding: const EdgeInsets.only(top: 10.0),
               child: Column(
                 children: <Widget>[
+                  Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                            'Hey, ${userPreferences.getUserName}',
+                            style: TextStyle(
+                                fontSize: 16.0, fontWeight: FontWeight.bold),
+                          ),
+                          Text(dataOfPickUp != null
+                              ? "Total time : ${dataOfPickUp['duration']}"
+                              : "loading...")
+                        ],
+                      )),
                   ListTile(
-                    leading: Icon(Icons.location_on),
+                    leading: Icon(
+                      Icons.location_on,
+                      color: Colors.green,
+                    ),
                     title: Text("Pickup Address"),
                     subtitle:
                         Text(_addresses == null ? "loading..." : _addresses[0]),
                   ),
                   ListTile(
-                    leading: Icon(Icons.location_on),
+                    leading: Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                    ),
                     title: Text("Drop Address"),
                     subtitle:
                         Text(_addresses == null ? "loading..." : _addresses[1]),
@@ -464,117 +498,210 @@ class _TrackOrderState extends State<HomeScreen> {
             ),
             panel: isPanelOpen
                 ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20.0),
-                    child: Column(
-                      children: <Widget>[
-                        ListTile(
-                          leading: Icon(Icons.location_on),
-                          title: Text("Pickup Address"),
-                          subtitle: Text(_addresses == null
-                              ? "loading..."
-                              : _addresses[0]),
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.location_on),
-                          title: Text("Drop Address"),
-                          subtitle: Text(_addresses == null
-                              ? "loading..."
-                              : _addresses[1]),
-                        ),
-                        ListTile(
-                            leading: Icon(Icons.watch_later),
-                            title: Text(
-                                "Duration & Distance (from pickup to drop)"),
-                            subtitle: Row(
-                              children: <Widget>[
-                                Text(dataOfPickUp == null
-                                    ? "loading..."
-                                    : dataOfPickUp['duration']),
-                                SizedBox(width: 20),
-                                Text(dataOfPickUp == null
-                                    ? "loading..."
-                                    : dataOfPickUp['distance']),
-                              ],
-                            )),
-                        ListTile(
-                            leading: Icon(Icons.watch_later),
-                            title: Text(
-                                "Duration & Distance (from your location to drop)"),
-                            subtitle: Row(
-                              children: <Widget>[
-                                Text(dataFromDriver == null
-                                    ? "loading..."
-                                    : dataFromDriver['duration']),
-                                SizedBox(width: 20),
-                                Text(dataFromDriver == null
-                                    ? "loading..."
-                                    : dataFromDriver['distance']),
-                              ],
-                            )),
-                        ListTile(
-                          leading: Icon(Icons.person),
-                          title: Text("User Name"),
-                          subtitle: Text(_userName),
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.call),
-                          trailing: IconButton(
-                            onPressed: () => launch("tel: $_userMobileNumber"),
-                            color: ThemeColors.primaryColor,
-                            icon: Icon(Icons.call),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 40.0,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: <Widget>[
+                          // ListTile(
+                          //   leading: Icon(Icons.location_on),
+                          //   title: Text("Pickup Address"),
+                          //   subtitle: Text(_addresses == null
+                          //       ? "loading..."
+                          //       : _addresses[0]),
+                          // ),
+                          ListTile(
+                            leading: Icon(Icons.confirmation_number),
+                            title: Text("OrderId"),
+                            subtitle: Text(orderid ?? 'loading'),
                           ),
-                          title: Text("User Phone"),
-                          subtitle:
-                              Text(_userMobileNumber.replaceAll("+91", "")),
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.person),
-                          title: Text("Receiver Name"),
-                          subtitle: Text(_receiverName),
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.call),
-                          trailing: IconButton(
-                            onPressed: () =>
-                                launch("tel: +91$_receiverMobileNumber"),
-                            color: ThemeColors.primaryColor,
-                            icon: Icon(Icons.call),
+                          ListTile(
+                              leading: Icon(Icons.watch_later),
+                              title: Text(
+                                  "Duration & Distance (from pickup to drop)"),
+                              subtitle: Row(
+                                children: <Widget>[
+                                  Text(dataOfPickUp == null
+                                      ? "loading..."
+                                      : dataOfPickUp['duration']),
+                                  SizedBox(width: 20),
+                                  Text(dataOfPickUp == null
+                                      ? "loading..."
+                                      : dataOfPickUp['distance']),
+                                ],
+                              )),
+                          ListTile(
+                              leading: Icon(Icons.watch_later),
+                              title: Text(
+                                  "Duration & Distance (from your location to drop)"),
+                              subtitle: Row(
+                                children: <Widget>[
+                                  Text(dataFromDriver == null
+                                      ? "loading..."
+                                      : dataFromDriver['duration']),
+                                  SizedBox(width: 20),
+                                  Text(dataFromDriver == null
+                                      ? "loading..."
+                                      : dataFromDriver['distance']),
+                                ],
+                              )),
+                          // ListTile(
+                          //   leading: Icon(Icons.person),
+                          //   title: Text("User Name and Phone"),
+                          //   subtitle: Text(_userName),
+                          // ),
+                          ListTile(
+                            leading: Icon(Icons.call),
+                            trailing: IconButton(
+                              onPressed: () =>
+                                  launch("tel: $_userMobileNumber"),
+                              color: ThemeColors.primaryColor,
+                              icon: Icon(Icons.call),
+                            ),
+                            title: Text("User Name and Phone"),
+                            subtitle: Text(
+                                '$_userName  ${_userMobileNumber.replaceAll("+91", "")}'),
                           ),
-                          title: Text("Receiver Phone"),
-                          subtitle: Text(_receiverMobileNumber),
-                        ),
-                        ListTile(
-                          leading: Icon(AntDesign.car),
-                          title: Text("Required Truck"),
-                          subtitle: Text(_truckName),
-                        ),
-                        SizedBox(height: 20),
-                        if (provider.getIsPicked && !provider.getIsDropped)
-                          FloatingActionButton.extended(
-                            heroTag: "have_delivered",
-                            backgroundColor: ThemeColors.primaryColor,
-                            foregroundColor: Colors.white,
-                            onPressed: () {
-                              _firebaseUtils.deliveryDone(orderid, provider);
-                              Fluttertoast.showToast(
-                                  msg: "Order deliverd successfully");
-                              setState(() => orderLoadingState =
-                                  OrderLoadingState.NOORDER);
-                            },
-                            icon: Icon(Icons.check),
-                            label: Text("Delivery Done"),
+                          // ListTile(
+                          //   leading: Icon(Icons.person),
+                          //   title: Text("Receiver Name"),
+                          //   subtitle: Text(_receiverName),
+                          // ),
+                          ListTile(
+                            leading: Icon(Icons.call),
+                            trailing: IconButton(
+                              onPressed: () =>
+                                  launch("tel: +91$_receiverMobileNumber"),
+                              color: ThemeColors.primaryColor,
+                              icon: Icon(Icons.call),
+                            ),
+                            title: Text("Receivern Name and Phone"),
+                            subtitle:
+                                Text('$_receiverName $_receiverMobileNumber'),
                           ),
-                        if (!provider.getIsPicked)
-                          FloatingActionButton.extended(
-                            heroTag: "have_picked",
-                            backgroundColor: ThemeColors.primaryColor,
-                            foregroundColor: Colors.white,
-                            onPressed: () =>
-                                _firebaseUtils.pickUpDone(orderid, provider),
-                            icon: Icon(Icons.check),
-                            label: Text("Pickup done"),
-                          )
-                      ],
+                          ListTile(
+                            leading: Icon(AntDesign.car),
+                            title: Text("Required Truck"),
+                            subtitle: Text(_truckName),
+                          ),
+                          SizedBox(height: 5),
+                          if (provider.getIsPicked && !provider.getIsDropped)
+                            if (_isReachedDrop)
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20),
+                                child: Column(
+                                  children: <Widget>[
+                                    TextField(
+                                      controller: _pickUpPinController,
+                                      maxLength: 6,
+                                      decoration: InputDecoration(
+                                          hintText: "Enter Drop OTP",
+                                          border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10.0))),
+                                    ),
+                                    MaterialButton(
+                                      onPressed: () {
+                                        if (_isReachedDrop &&
+                                            !_isReachedPickUp) {
+                                          print(dropPin);
+                                          if (_pickUpPinController.text ==
+                                              dropPin) {
+                                            _firebaseUtils.deliveryDone(
+                                                orderid,
+                                                provider,
+                                                _pickUpPinController,
+                                                dropPin);
+                                            Fluttertoast.showToast(
+                                                msg:
+                                                    "Order deliverd successfully");
+                                            setState(() => orderLoadingState =
+                                                OrderLoadingState.NOORDER);
+                                          } else {
+                                            Fluttertoast.showToast(
+                                                msg: "Invalid Drop PIN");
+                                          }
+                                        }
+
+                                        _pickUpPinController.clear();
+                                      },
+                                      child: Text("VERIFY"),
+                                      color: ThemeColors.primaryColor,
+                                      textColor: Colors.white,
+                                    )
+                                  ],
+                                ),
+                              ),
+                          if (provider.getIsPicked &&
+                              !provider.getIsDropped &&
+                              !_isReachedDrop)
+                            FloatingActionButton.extended(
+                              heroTag: "have_delivered",
+                              backgroundColor: ThemeColors.primaryColor,
+                              foregroundColor: Colors.white,
+                              onPressed: () {
+                                sendPinNotf(false);
+                              },
+                              icon: Icon(Icons.check),
+                              label: Text("Delivery Done"),
+                            ),
+                          if (!provider.getIsPicked)
+                            if (!_isReachedPickUp)
+                              FloatingActionButton.extended(
+                                heroTag: "have_picked",
+                                backgroundColor: ThemeColors.primaryColor,
+                                foregroundColor: Colors.white,
+                                onPressed: () => {
+                                  //
+                                  sendPinNotf(true),
+                                },
+                                label: Text("Reached pickup ?"),
+                              ),
+                          if (_isReachedPickUp)
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                children: <Widget>[
+                                  TextField(
+                                    controller: _pickUpPinController,
+                                    maxLength: 6,
+                                    decoration: InputDecoration(
+                                        hintText: "Enter PickUp OTP",
+                                        border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10.0))),
+                                  ),
+                                  MaterialButton(
+                                    onPressed: () {
+                                      if (_pickUpPinController.text.length ==
+                                          6) {
+                                        _firebaseUtils.pickUpDone(
+                                            orderid,
+                                            provider,
+                                            _pickUpPinController,
+                                            pickUpPin);
+                                        setState(() {
+                                          _isReachedPickUp = false;
+                                        });
+                                      } else {
+                                        Fluttertoast.showToast(
+                                            msg: "Enter a valid PIN");
+                                        setState(() {
+                                          _isReachedPickUp = false;
+                                        });
+                                      }
+                                      _pickUpPinController.clear();
+                                    },
+                                    child: Text("VERIFY"),
+                                    color: ThemeColors.primaryColor,
+                                    textColor: Colors.white,
+                                  )
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   )
                 : Container(),
@@ -632,8 +759,7 @@ class _TrackOrderState extends State<HomeScreen> {
                     accountEmail: Text(userPreferences.getUserPhone),
                     currentAccountPicture: CircleAvatar(
                       radius: 60,
-                      backgroundImage: NetworkImage(
-                          "https://vaibhavpathakofficial.tk/img/vaibhav.png"),
+                      backgroundImage: NetworkImage(userPreferences.getProfile),
                       backgroundColor: ThemeColors.primaryColor,
                     ),
                   ),
@@ -674,19 +800,10 @@ class _TrackOrderState extends State<HomeScreen> {
                   ),
                 ),
                 ListTile(
-                  onTap: () => Navigator.pushNamed(context, '/MAKESUPPORT'),
+                  onTap: () => Navigator.pushNamed(context, '/chat'),
                   leading: Icon(Icons.phone, color: ThemeColors.primaryColor),
                   title: Text(
                     "Support",
-                    style: TextStyle(color: ThemeColors.primaryColor),
-                  ),
-                ),
-                ListTile(
-                  onTap: () => Navigator.pushNamed(context, '/settings'),
-                  leading:
-                      Icon(Icons.settings, color: ThemeColors.primaryColor),
-                  title: Text(
-                    "Settings",
                     style: TextStyle(color: ThemeColors.primaryColor),
                   ),
                 ),
