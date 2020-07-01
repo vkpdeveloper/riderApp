@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:riderappweb/constants/themecolors.dart';
+import 'package:riderappweb/pages/indexpage.dart';
 import 'package:riderappweb/providers/location_provider.dart';
 import 'package:riderappweb/providers/order_provider.dart';
 import 'package:riderappweb/providers/user_provider.dart';
@@ -29,10 +30,10 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: "Rider App",
         theme: ThemeData(
-            textTheme: GoogleFonts.openSansTextTheme(),
+            textTheme: GoogleFonts.barlowTextTheme(),
             primaryColor: ThemeColors.primaryColor,
             accentColor: Colors.white),
-        home: HomePage(),
+        home: IndexPage(),
       ),
     );
   }

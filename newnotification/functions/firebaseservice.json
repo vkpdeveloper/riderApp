@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "logisticsuber-6dd8d",
+  "private_key_id": "b8bbe0623717bf949eb454b90def20e0b07d9d4b",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC2C9VVddOeY8IE\nw2G1Es/yaWHj506WCZrmPXFm+01dLhtxz/zbZjliMRjwWHEySglpnuPQONjwWJP9\nHDCwFpDjifRkml1E7Z6/CMkw9ngclY78Fh8FPYYHVSSqbg0rykopfleZL0WydGvH\n0Cpi9PsFghufJscrr51nE7ApAMHeMIZopaEn3pfMe7AGHKZhya5PP1g+AJUAdYtt\nXsCpc/cnGlwDdOl8WDOfN3Rmbf0ifflV2S4EfVaksdJjTFnIZ9oxdqPCpPGXPqDO\nIJzsLY8i1DCuKelhgxO4d1YTZlfPrR6J1oRCCmB+r8uYaT7A88D+SOzVmYEQL4YC\nZIUTlVt/AgMBAAECggEAVTJeidtVyWeocnA59vMx7KITFQS4i5E9NAmHXAm6ICSm\n5XHQRaGms2SE5l6Nw1pQ42Rf+5/PL1RVFfyucIpvDn4OqVJw2gRW6dKjzc1bUw1P\nWHzF0b8ETcQ0H6rXcSn/4UFmn6M2/BhuJJowbBV4sRA9+xK73Z8XjBjztYzMLj4+\nRkXALcKd3ZnVSXM2n1ZLFKJtT4kc4NMBOANuMJScMyoZFzoFqJn/+nhH7CUzy58G\nqRTfAhdEdSEljLjYF2DptqnTNcdVWr0WVeeKNlnFaK+iaJwTYALcmCu/+jao1zfe\ndjzV85SAE1BaFvSCr5kLv9Czk5Olx4vFqxw8395fkQKBgQDv//5/3sX9PndJI2t/\nt5OlvCraRtPpUGb5RKstCOQbccmnpl6YpLFjaIUCY1i61bb/qdjFDrYy0HoAGO81\nPi/W9Kl+Sjj6Ko3AalTfRONQP8Y+e5aoNyO242UtbQx0cWBZ5mFCrjdmusqTKMcT\ntHsFVJLD6u87zEnEreM+W65waQKBgQDCLsKjBYPYNal/3321xZr/2DPmpCFS+MP6\nAgBBcAtoOddAF5Vthky5H3dW6CwjPDPJxQMWqZZf0CGp7Vy6GgPJcuh9tMNyVA5o\njp19uBVnsJtjN6vEzt/lW67KbMECscCHymJiAC0wZ2cS/7ELfThpMN1z2998XkBo\nBZ8h4BjvpwKBgQDtWFEry/gpVhlJr0mkaLwPb2NBskHnvqfXY92VD/HmYkV3EsUC\nV/1FvhusHOum+auccy/40W/GGP5OElqeYP2WqybjyitG28aLv5xnoQzcU/WN3VNE\n0CL1vzRUFD/4+Ba9UWRmOTx4z8l+dxlJl3cB8n2iWzhz/rgFVaIiDTEZ4QKBgEej\nXKcr97IiSgAlAYm39zEAIFWso6aqpBJt/o4lue+ftyusB7K6Yz/AvhRP30i4gxqj\nFjqcIiAC9whry1PVGSSOwfruX1SkchRc2PlymmMAorL97N7Uu4EwS9HeQW6vCSqP\nnbAuBH3hCAPYVQa6Eb+tCWYe7dpCI1y9BjJHLKvtAoGAEkWNzCRKY574WwkbvJdj\n7qmHKxM3qtm24sh0upMl6mu45493bqvUi/IOMh2ZbjOHW0X42tWpPi2n7WuaR4Kj\nJIBLq6OAVzcp83JBikbaQlQ6T9NALBabSlcC9PbDMgOymm5ftzZRygEPUPvHT7rS\nr1EAqJTSP7jgpWQD9q6o8ok=\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-c7elx@logisticsuber-6dd8d.iam.gserviceaccount.com",
+  "client_id": "114722462092474464743",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-c7elx%40logisticsuber-6dd8d.iam.gserviceaccount.com"
+}

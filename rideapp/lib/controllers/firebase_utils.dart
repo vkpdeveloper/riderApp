@@ -10,6 +10,7 @@ import 'package:progress_dialog/progress_dialog.dart';
 import 'package:rideapp/providers/locationViewProvider.dart';
 import 'package:rideapp/providers/orderprovider.dart';
 import 'package:rideapp/providers/user_provider.dart';
+import 'package:rideapp/services/firestore_path.dart';
 
 class FirebaseUtils {
   FirebaseAuth _auth = FirebaseAuth.instance;
@@ -34,13 +35,19 @@ class FirebaseUtils {
     return true;
   }
 
+  void updateToken(FirebaseUser user) async {
+    String token = await _messaging.getToken();
+    Firestore.instance.collection('user').document(user.uid).setData({
+      "token": token,
+    }, merge: true);
+  }
 
   Future<bool> isUserExist() async {
     FirebaseUser user = await getCurrentUser();
     final snapShot =
         await Firestore.instance.collection('user').document(user.uid).get();
-       return  snapShot.exists;
-
+    if (snapShot.exists) updateToken(user);
+    return snapShot.exists;
   }
 
   Future<bool> getLoggedIn() async {
@@ -163,7 +170,7 @@ class FirebaseUtils {
     if (orderProvider.getSelectedPaymentMethod == 2) paymentMethod = "Cash";
     String orderID =
         "ORDER${currentDate.day}${currentDate.month}${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 12)}";
-      Map<String, dynamic> orderData = {
+    Map<String, dynamic> orderData = {
       "orderID": orderID,
       "userID": userPreferences.getUserID,
       "userToken": userPreferences.getUserToken,
@@ -205,7 +212,6 @@ class FirebaseUtils {
       ProgressDialog dialog,
       UserPreferences userPreferences,
       BuildContext context) {
-        
     String paymentMethod = "";
     if (orderProvider.getSelectedPaymentMethod == 0) paymentMethod = "Paytm";
     if (orderProvider.getSelectedPaymentMethod == 1)
